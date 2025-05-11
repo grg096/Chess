@@ -45,6 +45,7 @@ public class Table {
     private final static Dimension BOARD_PANEL_DIMENSION = new Dimension(400, 350);
     private final static Dimension OPTIONS_DIALOG_DIMENSION = new Dimension(300, 500);
     private final static Dimension TILE_PANEL_DIMENSION = new Dimension(10, 10);
+    private final static Dimension END_GAME_DIALOG_WINDOW_DIMENSION = new Dimension(200, 100);
 
     private boolean highlightLegalMoves = true;
     private String positionOfWhiteTakenPanel = BorderLayout.SOUTH;
@@ -378,6 +379,73 @@ public class Table {
 
     }
 
+    private class CheckMateDialogWindow extends JDialog { //checkmate doesn't work for the cases when the pawn is just promoted
+
+        public CheckMateDialogWindow(){
+            this.setTitle("Checkmate");
+            this.setSize(END_GAME_DIALOG_WINDOW_DIMENSION);
+            this.setModal(true);
+            this.setLayout(new FlowLayout());
+
+            JLabel text = new JLabel("The game is over. " + chessBoard.getPlayer().getOpponent() + " won :)");
+            JButton restartButton = new JButton("new game");
+            restartButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    chessBoard = Board.createStandardBoard();
+                    movelog.clear();
+                    gameHistoryPanel.redo(chessBoard, movelog);
+                    takenPiecesPanel.redo(movelog);
+                    blackTakenPieces.redo(movelog, chessBoard);
+                    whiteTakenPieces.redo(movelog, chessBoard);
+
+                    boardPanel.drawBoard(chessBoard);
+
+                    dispose();
+                }
+            });
+
+            this.add(text);
+            this.add(restartButton);
+            this.setVisible(true);
+
+        }
+
+    }
+
+    private class StaleMateDialogWindow extends JDialog { //checkmate doesn't when the pawn is promoted
+
+        public StaleMateDialogWindow(){
+            this.setTitle("Stalemate");
+            this.setSize(END_GAME_DIALOG_WINDOW_DIMENSION);
+            this.setModal(true);
+            this.setLayout(new FlowLayout());
+
+            JLabel text = new JLabel("The game is over - it's a tie (:");
+            JButton restartButton = new JButton("new game");
+            restartButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    chessBoard = Board.createStandardBoard();
+                    movelog.clear();
+                    gameHistoryPanel.redo(chessBoard, movelog);
+                    takenPiecesPanel.redo(movelog);
+                    blackTakenPieces.redo(movelog, chessBoard);
+                    whiteTakenPieces.redo(movelog, chessBoard);
+
+                    boardPanel.drawBoard(chessBoard);
+
+                    dispose();
+                }
+            });
+
+            this.add(text);
+            this.add(restartButton);
+            this.setVisible(true);
+
+        }
+
+    }
 
     private class BoardPanel extends JPanel {
         final List<TilePanel> boardTiles;
@@ -530,6 +598,12 @@ public class Table {
 
                                 boardPanel.drawBoard(chessBoard);
                                 validate();
+
+                                if(chessBoard.getPlayer().isInCheckMate()){ //later change on check for checkmate
+                                    new CheckMateDialogWindow();
+                                } else if (chessBoard.getPlayer().isInStaleMate()) {
+                                    new StaleMateDialogWindow();
+                                }
 
                             }
 
