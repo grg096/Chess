@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-public abstract class TakenPiecesPanel2 extends JPanel {
+public abstract class TakenPiecesColorPanel extends JPanel {
 
     private final JPanel playerTitlePanel;
     private final JPanel takenPiecesPanel;
@@ -27,7 +27,7 @@ public abstract class TakenPiecesPanel2 extends JPanel {
 
     private static final Dimension PLAYER_TITLE_PANEL_DIMENSION = new Dimension(60, 60);
 
-    TakenPiecesPanel2(final Color color, Alliance alliance){
+    TakenPiecesColorPanel(final Color color, Alliance alliance){
         this.titleColor = color;
         this.panelPieceAlliance = alliance;
 
@@ -127,10 +127,10 @@ public abstract class TakenPiecesPanel2 extends JPanel {
         return playerPanel;
     };
 
-    public static class WhiteTakenPiecesPanel extends TakenPiecesPanel2{
+    public static class WhiteTakenPiecesColorPanel extends TakenPiecesColorPanel {
 
 
-        WhiteTakenPiecesPanel(){
+        WhiteTakenPiecesColorPanel(){
             super(Color.white, Alliance.WHITE);
         }
 
@@ -140,9 +140,9 @@ public abstract class TakenPiecesPanel2 extends JPanel {
 
     }
 
-    public static class BlackTakenPiecesPanel extends TakenPiecesPanel2{
+    public static class BlackTakenPiecesColorPanel extends TakenPiecesColorPanel {
 
-        BlackTakenPiecesPanel(){
+        BlackTakenPiecesColorPanel(){
             super(Color.black, Alliance.BLACK);
         }
 

@@ -16,7 +16,6 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -30,8 +29,8 @@ public class Table {
     private final JFrame gameFrame;
     private final GameHistoryPanel gameHistoryPanel;
     private final TakenPiecesPanel takenPiecesPanel;
-    private final TakenPiecesPanel2.WhiteTakenPiecesPanel whiteTakenPieces;
-    private final TakenPiecesPanel2.BlackTakenPiecesPanel blackTakenPieces;
+    private final TakenPiecesColorPanel.WhiteTakenPiecesColorPanel whiteTakenPieces;
+    private final TakenPiecesColorPanel.BlackTakenPiecesColorPanel blackTakenPieces;
     private final BoardPanel boardPanel;
     private final Movelog movelog;
 
@@ -76,8 +75,8 @@ public class Table {
 
         final JMenuBar tableMenuBar = createTableMenuBar();
 
-        whiteTakenPieces = new TakenPiecesPanel2.WhiteTakenPiecesPanel();
-        blackTakenPieces = new TakenPiecesPanel2.BlackTakenPiecesPanel();
+        whiteTakenPieces = new TakenPiecesColorPanel.WhiteTakenPiecesColorPanel();
+        blackTakenPieces = new TakenPiecesColorPanel.BlackTakenPiecesColorPanel();
 
         this.boardPanel = new BoardPanel();
 
@@ -379,7 +378,7 @@ public class Table {
 
     }
 
-    private class CheckMateDialogWindow extends JDialog { //checkmate doesn't work for the cases when the pawn is just promoted
+    private class CheckMateDialogWindow extends JDialog {
 
         public CheckMateDialogWindow(){
             this.setTitle("Checkmate");
@@ -413,7 +412,7 @@ public class Table {
 
     }
 
-    private class StaleMateDialogWindow extends JDialog { //checkmate doesn't when the pawn is promoted
+    private class StaleMateDialogWindow extends JDialog {
 
         public StaleMateDialogWindow(){
             this.setTitle("Stalemate");
