@@ -69,22 +69,23 @@ public class Table {
         this.chessBoard = Board.createStandardBoard();
 
         this.gameHistoryPanel = new GameHistoryPanel();
-        this.takenPiecesPanel = new TakenPiecesPanel();
 
         this.boardDirection = BoardDirection.NORMAL;
 
         final JMenuBar tableMenuBar = createTableMenuBar();
 
-        whiteTakenPieces = new TakenPiecesColorPanel.WhiteTakenPiecesColorPanel();
-        blackTakenPieces = new TakenPiecesColorPanel.BlackTakenPiecesColorPanel();
+        this.takenPiecesPanel = new TakenPiecesPanel();
+        takenPiecesPanel.setVisible(false);
+        this.whiteTakenPieces = new TakenPiecesColorPanel.WhiteTakenPiecesColorPanel();
+        this.blackTakenPieces = new TakenPiecesColorPanel.BlackTakenPiecesColorPanel();
 
         this.boardPanel = new BoardPanel();
 
         this.movelog = new Movelog();
 
-        this.gameFrame.add(this.takenPiecesPanel, BorderLayout.WEST);
         this.gameFrame.add(this.boardPanel, BorderLayout.CENTER);
         this.gameFrame.add(this.gameHistoryPanel, BorderLayout.EAST);
+        this.gameFrame.add(this.takenPiecesPanel, BorderLayout.WEST);
         this.gameFrame.add(this.whiteTakenPieces, positionOfWhiteTakenPanel);
         this.gameFrame.add(this.blackTakenPieces, positionOfBlackTakenPanel);
 
@@ -223,11 +224,13 @@ public class Table {
         final private JFrame frame;
         final private JPanel texturePanel;
         final private JPanel playerPanel;
-        final private JPanel uiRegim;
+        final private JPanel takenPiecesPanel;
         final private JButton saveButton;
 
         private boolean blackAI;
         private boolean whiteAI;
+
+        private boolean isTakenPiecesPanelSeparated;
 
         private String tempTexturePack = texturePack;
 
@@ -240,7 +243,7 @@ public class Table {
 
             texturePanel = createTexturePackPanel();
             playerPanel = createPlayerPanel();
-            uiRegim = null; // later change
+            takenPiecesPanel = createTakenPiecesPanel();
             saveButton = createSaveButton();
 
             this.setModal(true);
@@ -251,9 +254,11 @@ public class Table {
 
             texturePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
             playerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            takenPiecesPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
             dialogWindowContainer.add(texturePanel);
             dialogWindowContainer.add(playerPanel);
+            dialogWindowContainer.add(takenPiecesPanel);
 
             this.add(dialogWindowContainer);
             this.add(saveButton);
@@ -273,6 +278,7 @@ public class Table {
 
                     chessBoard.blackPlayer().setAI(blackAI);
                     chessBoard.whitePlayer().setAI(whiteAI);
+                    takenPiecesPanel.setVisible(isTakenPiecesPanelSeparated);
 
                     dispose();
                 }
@@ -376,6 +382,37 @@ public class Table {
             return playerPanel;
         }
 
+        private JPanel createTakenPiecesPanel(){
+            final JPanel takenPiecesPanel = new JPanel();
+            final JPanel radioButtonsPanel = new JPanel();
+
+            takenPiecesPanel.setLayout(new FlowLayout());
+
+            final JLabel takenPiecesPanelLabel = new JLabel("some text");
+            final JRadioButton combinedRadioButton = new JRadioButton("combined");
+            final JRadioButton separatedRadioButton = new JRadioButton("separated");
+
+            radioButtonsPanel.add(separatedRadioButton);
+            radioButtonsPanel.add(combinedRadioButton);
+
+            separatedRadioButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    isTakenPiecesPanelSeparated = true;
+                }
+            });
+            combinedRadioButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    isTakenPiecesPanelSeparated = false;
+                }
+            });
+
+            takenPiecesPanel.add(takenPiecesPanelLabel);
+            takenPiecesPanel.add(radioButtonsPanel);
+
+            return takenPiecesPanel;
+        }
     }
 
     private class CheckMateDialogWindow extends JDialog {
@@ -526,17 +563,6 @@ public class Table {
 
                 @Override
                 public void mouseClicked(MouseEvent e) {
-
-//                    if(isBlackAI && chessBoard.currentPlayer().getAlliance() == Alliance.BLACK){
-//                        System.out.println("WORKS");
-//                        final Move move = miniMax.execute(chessBoard);
-//                        final MoveTransition transition = chessBoard.currentPlayer().makeMove(move);
-//                        if(transition.getMoveStatus().isDone()) {
-//                            chessBoard = transition.getTransitionBoard();
-//                            System.out.println(chessBoard);
-//                            movelog.addMove(move);
-//                        }
-//                    }
 
                     // dont really know how to do it well, probably will need to use multithreading
                     // the problem is that I either need to check if it's an AI move first in the order and then work with user move
