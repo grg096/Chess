@@ -97,7 +97,7 @@ public abstract class Player {
             return new MoveTransition(this.board, move, MoveStatus.ILLEGAL_MOVE);
         }
 
-        final Board transitionBoard = move.execute(); // works correctly, so execute works how it should be working
+        final Board transitionBoard = move.execute();
 
         final Collection<Move> kingAttacks = Player.calculateAttacksOnTile(transitionBoard.currentPlayer().getOpponent().getPlayerKing().getPiecePosition(),
                 transitionBoard.currentPlayer().getLegalMoves());
