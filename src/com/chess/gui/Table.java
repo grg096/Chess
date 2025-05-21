@@ -224,7 +224,7 @@ public class Table {
         final private JFrame frame;
         final private JPanel texturePanel;
         final private JPanel playerPanel;
-        final private JPanel takenPiecesPanel;
+        final private JPanel optionsTakenPiecesPanel;
         final private JButton saveButton;
 
         private boolean blackAI;
@@ -243,7 +243,7 @@ public class Table {
 
             texturePanel = createTexturePackPanel();
             playerPanel = createPlayerPanel();
-            takenPiecesPanel = createTakenPiecesPanel();
+            optionsTakenPiecesPanel = createTakenPiecesPanel();
             saveButton = createSaveButton();
 
             this.setModal(true);
@@ -254,11 +254,11 @@ public class Table {
 
             texturePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
             playerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-            takenPiecesPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            optionsTakenPiecesPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
             dialogWindowContainer.add(texturePanel);
             dialogWindowContainer.add(playerPanel);
-            dialogWindowContainer.add(takenPiecesPanel);
+            dialogWindowContainer.add(optionsTakenPiecesPanel);
 
             this.add(dialogWindowContainer);
             this.add(saveButton);
@@ -278,7 +278,9 @@ public class Table {
 
                     chessBoard.blackPlayer().setAI(blackAI);
                     chessBoard.whitePlayer().setAI(whiteAI);
-                    takenPiecesPanel.setVisible(isTakenPiecesPanelSeparated);
+                    takenPiecesPanel.setVisible(!isTakenPiecesPanelSeparated);
+                    whiteTakenPieces.setVisible(isTakenPiecesPanelSeparated);
+                    blackTakenPieces.setVisible(isTakenPiecesPanelSeparated);
 
                     dispose();
                 }
@@ -388,12 +390,16 @@ public class Table {
 
             takenPiecesPanel.setLayout(new FlowLayout());
 
-            final JLabel takenPiecesPanelLabel = new JLabel("some text");
+            final JLabel takenPiecesPanelLabel = new JLabel("show pieces");
             final JRadioButton combinedRadioButton = new JRadioButton("combined");
             final JRadioButton separatedRadioButton = new JRadioButton("separated");
 
             radioButtonsPanel.add(separatedRadioButton);
             radioButtonsPanel.add(combinedRadioButton);
+
+            final ButtonGroup radioButtonGroup = new ButtonGroup();
+            radioButtonGroup.add(combinedRadioButton);
+            radioButtonGroup.add(separatedRadioButton);
 
             separatedRadioButton.addActionListener(new ActionListener() {
                 @Override
