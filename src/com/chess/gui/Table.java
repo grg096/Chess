@@ -5,8 +5,10 @@ import com.chess.engine.board.BoardUtils;
 import com.chess.engine.board.Move;
 import com.chess.engine.board.Tile;
 import com.chess.engine.pieces.Piece;
+import com.chess.engine.player.MoveStatus;
 import com.chess.engine.player.MoveTransition;
 import com.chess.engine.player.ai.MiniMax;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import javax.imageio.ImageIO;
@@ -734,7 +736,16 @@ public class Table {
 
         private Collection<Move> pieceLegalMoves(final Board board) {
             if (humanMovedPiece != null && humanMovedPiece.getPieceAlliance() == board.currentPlayer().getAlliance()) {
-                return humanMovedPiece.calculateLegalMoves(board);
+
+                final List<Move> pieceLegalMoves = new ArrayList<>();
+
+                for (final Move move : humanMovedPiece.calculateLegalMoves(board)) {
+                    if(board.currentPlayer().makeMove(move).getMoveStatus() == MoveStatus.DONE){
+                        pieceLegalMoves.add(move);
+                    }
+                }
+
+                return ImmutableList.copyOf(pieceLegalMoves);
             }
             return Collections.emptyList();
         }
