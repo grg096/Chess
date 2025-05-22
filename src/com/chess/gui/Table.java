@@ -49,6 +49,7 @@ public class Table {
     private final static Dimension END_GAME_DIALOG_WINDOW_DIMENSION = new Dimension(200, 100);
 
     private boolean highlightLegalMoves = true;
+    private boolean isTakenPiecesPanelSeparated = true;
     private String positionOfWhiteTakenPanel = BorderLayout.SOUTH;
     private String positionOfBlackTakenPanel = BorderLayout.NORTH;
 
@@ -232,8 +233,6 @@ public class Table {
         private boolean blackAI;
         private boolean whiteAI;
 
-        private boolean isTakenPiecesPanelSeparated;
-
         private String tempTexturePack = texturePack;
 
         public OptionsDialogWindow(JFrame frame) {
@@ -283,6 +282,7 @@ public class Table {
                     takenPiecesPanel.setVisible(!isTakenPiecesPanelSeparated);
                     whiteTakenPieces.setVisible(isTakenPiecesPanelSeparated);
                     blackTakenPieces.setVisible(isTakenPiecesPanelSeparated);
+
 
                     dispose();
                 }
