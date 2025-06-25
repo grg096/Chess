@@ -498,7 +498,7 @@ public class Table {
             super(new GridLayout(8, 8));
             this.boardTiles = new ArrayList<>();
             for (int i = 0; i < BoardUtils.NUM_TILES; i++) {
-                final TilePanel tilePanel = new TilePanel(this, i);
+                final TilePanel tilePanel = new TilePanel(this, i, 3);
                 this.boardTiles.add(tilePanel);
                 add(tilePanel);
             }
@@ -557,6 +557,65 @@ public class Table {
     private class TilePanel extends JPanel {
 
         private final int tileId;
+        private final ImageIcon tileIconImage = new ImageIcon(getTileIconImage(chessBoard));
+        private Point tileImageCornerPoint;
+        private Point tileImagePreviousPoint;
+
+        TilePanel(final BoardPanel boardPanel,
+                  final int tileId, final int WILL_DELETE_LATER){
+
+            super(new GridBagLayout());
+            this.tileId = tileId;
+            setPreferredSize(TILE_PANEL_DIMENSION);
+            assignTileColor();
+            assignTilePieceIcon(chessBoard);
+
+            tileImageCornerPoint = new Point(0, 0);
+
+            this.addMouseListener(mouseHandler);
+            this.addMouseMotionListener(mouseHandler);
+
+        }
+
+        MouseAdapter mouseHandler = new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (chessBoard.isAI()) {
+                    executeAiMove();
+                }
+
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    sourceTile = chessBoard.getTile(tileId);
+                    humanMovedPiece = sourceTile.getPiece();
+                    if (humanMovedPiece == null) {
+                        sourceTile = null;
+                    } else {
+                        tileImageCornerPoint = e.getPoint();
+                    }
+                }
+
+                boardPanel.drawBoard(chessBoard);
+
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                tileImagePreviousPoint = e.getPoint();
+                tileImageCornerPoint = e.getPoint();
+            }
+
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                Point currentPoint = e.getPoint();
+                tileImageCornerPoint.translate(
+                        (int)(currentPoint.getX() - tileImagePreviousPoint.getX()),
+                        (int)(currentPoint.getY() - tileImagePreviousPoint.getY())
+                );
+                tileImagePreviousPoint = currentPoint;
+                System.out.println(tileImageCornerPoint);
+            }
+        };
+
 
         TilePanel(final BoardPanel boardPanel,
                   final int tileId) {
@@ -566,6 +625,8 @@ public class Table {
             setPreferredSize(TILE_PANEL_DIMENSION);
             assignTileColor();
             assignTilePieceIcon(chessBoard);
+
+
 
             addMouseListener(new MouseListener() {
 
@@ -600,6 +661,7 @@ public class Table {
                             if (humanMovedPiece == null) {
                                 sourceTile = null;
                             }
+
                         }
                         // second click
                         else {
@@ -673,6 +735,12 @@ public class Table {
             validate();
         }
 
+        // may be it should work on a board panel level, now I basically add this tileIconImage to all the tiles, because drawBoard() draws each tile and drawTile() calls repaint always
+        public void paintComponent(Graphics g){
+            super.paintComponent(g);
+            tileIconImage.paintIcon(this, g, (int)tileImageCornerPoint.getX(), (int)tileImageCornerPoint.getY());
+        }
+
         public void executeAiMove() {
             final Move move = miniMax.execute(chessBoard);
             final MoveTransition transition = chessBoard.currentPlayer().makeMove(move);
@@ -717,6 +785,15 @@ public class Table {
                     throw new RuntimeException(e);
                 }
 
+            }
+        }
+
+        private BufferedImage getTileIconImage(final Board board){
+            try {
+                return ImageIO.read(new File(defaultPieceImagesPath + board.getTile(this.tileId).getPiece().getPieceAlliance().toString().substring(0, 1)
+                        + board.getTile(this.tileId).getPiece().toString() + ".gif"));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         }
 
