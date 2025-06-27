@@ -16,8 +16,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
 import java.io.File;
 import java.io.IOException;
+import java.text.AttributedCharacterIterator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,6 +31,7 @@ public class Table {
 
     private final MiniMax miniMax;
     private final JFrame gameFrame;
+    private final DragGlassPane dragGlassPane;
     private final GameHistoryPanel gameHistoryPanel;
     private final TakenPiecesPanel takenPiecesPanel;
     private final TakenPiecesColorPanel.WhiteTakenPiecesColorPanel whiteTakenPieces;
@@ -48,14 +51,15 @@ public class Table {
     private final static Dimension TILE_PANEL_DIMENSION = new Dimension(10, 10);
     private final static Dimension END_GAME_DIALOG_WINDOW_DIMENSION = new Dimension(200, 100);
 
+    private final static int TILE_DRAWING_X_POSITION_ADJUSTMENT = 20;
+    private final static int TILE_DRAWING_Y_POSITION_ADJUSTMENT = 10;
+
     private boolean highlightLegalMoves = true;
     private boolean isTakenPiecesPanelSeparated = true;
     private String positionOfWhiteTakenPanel = BorderLayout.SOUTH;
     private String positionOfBlackTakenPanel = BorderLayout.NORTH;
 
     private static String HIGHLITE_ICON_PATH = "src/com/chess/gui/art/misc/green_dot.png";
-    //    private static String texturePack = GuiUtils.texturePack;
-//    private static String defaultPieceImagesPath = GuiUtils.defaultPieceImagesPath;
     private static String texturePack = "fancy";
     private static String defaultPieceImagesPath = "src/com/chess/gui/art/" + texturePack + "/";
 
@@ -68,6 +72,10 @@ public class Table {
         this.miniMax = new MiniMax(4);
         this.gameFrame = new JFrame("JChess");
         this.gameFrame.setLayout(new BorderLayout());
+
+        this.dragGlassPane = new DragGlassPane();
+        gameFrame.setGlassPane(dragGlassPane);
+        dragGlassPane.setVisible(true);
 
         this.chessBoard = Board.createStandardBoard();
 
@@ -492,7 +500,11 @@ public class Table {
     }
 
     private class BoardPanel extends JPanel {
+
         final List<TilePanel> boardTiles;
+
+        private Image draggedImage = null; // later will make it to adjust to each piece
+        private Point draggedImagePoint = null;
 
         BoardPanel() {
             super(new GridLayout(8, 8));
@@ -557,9 +569,8 @@ public class Table {
     private class TilePanel extends JPanel {
 
         private final int tileId;
-        private final ImageIcon tileIconImage = new ImageIcon(getTileIconImage(chessBoard));
-        private Point tileImageCornerPoint;
-        private Point tileImagePreviousPoint;
+
+        private static int mouseTileId = -1;
 
         TilePanel(final BoardPanel boardPanel,
                   final int tileId, final int WILL_DELETE_LATER){
@@ -570,8 +581,6 @@ public class Table {
             assignTileColor();
             assignTilePieceIcon(chessBoard);
 
-            tileImageCornerPoint = new Point(0, 0);
-
             this.addMouseListener(mouseHandler);
             this.addMouseMotionListener(mouseHandler);
 
@@ -580,39 +589,120 @@ public class Table {
         MouseAdapter mouseHandler = new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (chessBoard.isAI()) {
-                    executeAiMove();
-                }
 
                 if (SwingUtilities.isLeftMouseButton(e)) {
-                    sourceTile = chessBoard.getTile(tileId);
-                    humanMovedPiece = sourceTile.getPiece();
-                    if (humanMovedPiece == null) {
-                        sourceTile = null;
-                    } else {
-                        tileImageCornerPoint = e.getPoint();
+
+                    if (sourceTile == null) {
+
+                        sourceTile = chessBoard.getTile(tileId);
+                        humanMovedPiece = sourceTile.getPiece();
+                        if (humanMovedPiece == null) {
+                            sourceTile = null;
+                        }
+
                     }
+                    // second click
+                    else {
+
+                        destinationTile = chessBoard.getTile(tileId);
+                        final Move move = Move.MoveFactory.createMove(chessBoard, sourceTile.getTileCoordinate(), destinationTile.getTileCoordinate());
+                        final MoveTransition transition = chessBoard.currentPlayer().makeMove(move);
+                        if (transition.getMoveStatus().isDone()) {
+                            chessBoard = transition.getTransitionBoard();
+                            System.out.println(chessBoard);
+                            movelog.addMove(move);
+                            //TODO add made move to move list
+                        }
+
+                        sourceTile = null;
+                        destinationTile = null;
+                        humanMovedPiece = null;
+
+                    }
+
+
+                    validate();
                 }
 
-                boardPanel.drawBoard(chessBoard);
 
             }
 
             @Override
             public void mousePressed(MouseEvent e) {
-                tileImagePreviousPoint = e.getPoint();
-                tileImageCornerPoint = e.getPoint();
+
+                if(chessBoard.getTile(tileId).isTileOccupied()){
+
+                    sourceTile = chessBoard.getTile(tileId);
+                    humanMovedPiece = sourceTile.getPiece();
+
+                    Image image = TilePanel.this.getTileIconImage(chessBoard);
+                    Point point = SwingUtilities.convertPoint(TilePanel.this, e.getPoint(), dragGlassPane);
+                    dragGlassPane.startDrag(image, point);
+                    mouseTileId = tileId;
+                }
+
+                boardPanel.drawBoard(chessBoard);
+                validate();
+
             }
 
             @Override
             public void mouseDragged(MouseEvent e) {
-                Point currentPoint = e.getPoint();
-                tileImageCornerPoint.translate(
-                        (int)(currentPoint.getX() - tileImagePreviousPoint.getX()),
-                        (int)(currentPoint.getY() - tileImagePreviousPoint.getY())
-                );
-                tileImagePreviousPoint = currentPoint;
-                System.out.println(tileImageCornerPoint);
+
+                Point point = SwingUtilities.convertPoint(TilePanel.this, e.getPoint(), dragGlassPane);
+                dragGlassPane.updateDrag(point);
+
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+
+                dragGlassPane.stopDrag();
+
+                Point point = SwingUtilities.convertPoint(TilePanel.this, e.getPoint(), dragGlassPane);
+                destinationTile = chessBoard.getTile(dragGlassPane.determinePointTileId(point));
+                final Move move = Move.MoveFactory.createMove(chessBoard, sourceTile.getTileCoordinate(), destinationTile.getTileCoordinate());
+                final MoveTransition transition = chessBoard.currentPlayer().makeMove(move);
+                if (transition.getMoveStatus().isDone()) {
+                    chessBoard = transition.getTransitionBoard();
+                    System.out.println(chessBoard);
+                    movelog.addMove(move);
+                    //TODO add made move to move list
+                }
+
+                sourceTile = null;
+                destinationTile = null;
+                humanMovedPiece = null;
+
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        gameHistoryPanel.redo(chessBoard, movelog);
+                        takenPiecesPanel.redo(movelog);
+
+                        whiteTakenPieces.redo(movelog, chessBoard);
+                        blackTakenPieces.redo(movelog, chessBoard);
+
+                        boardPanel.drawBoard(chessBoard);
+                        validate();
+
+                        if(chessBoard.getPlayer().isInCheckMate()){
+                            new CheckMateDialogWindow();
+                        } else if (chessBoard.getPlayer().isInStaleMate()) {
+                            new StaleMateDialogWindow();
+                        }
+
+                    }
+
+                });
+
+                if (chessBoard.isAI()) {
+                    executeAiMove();
+
+                }
+
+                validate();
+
             }
         };
 
@@ -736,10 +826,12 @@ public class Table {
         }
 
         // may be it should work on a board panel level, now I basically add this tileIconImage to all the tiles, because drawBoard() draws each tile and drawTile() calls repaint always
-        public void paintComponent(Graphics g){
-            super.paintComponent(g);
-            tileIconImage.paintIcon(this, g, (int)tileImageCornerPoint.getX(), (int)tileImageCornerPoint.getY());
-        }
+//        public void paintComponent(Graphics g){
+//            super.paintComponent(g);
+//            if(this.tileId == mouseTileId) {
+//                tileIconImage.paintIcon(boardPanel, g, (int) tileImageCornerPoint.getX(), (int) tileImageCornerPoint.getY());
+//            }
+//        }
 
         public void executeAiMove() {
             final Move move = miniMax.execute(chessBoard);
@@ -788,7 +880,7 @@ public class Table {
             }
         }
 
-        private BufferedImage getTileIconImage(final Board board){
+        private Image getTileIconImage(final Board board){
             try {
                 return ImageIO.read(new File(defaultPieceImagesPath + board.getTile(this.tileId).getPiece().getPieceAlliance().toString().substring(0, 1)
                         + board.getTile(this.tileId).getPiece().toString() + ".gif"));
@@ -852,5 +944,44 @@ public class Table {
         }
 
     }
+
+    private class DragGlassPane extends JComponent {
+        private Image draggedImage = null;
+        private Point location = null;
+
+        public void startDrag(Image img, Point pt) {
+            this.draggedImage = img;
+            this.location = pt;
+            repaint();
+        }
+
+        public void updateDrag(Point pt) {
+            this.location = pt;
+            repaint();
+        }
+
+        public void stopDrag() {
+            this.draggedImage = null;
+            this.location = null;
+            repaint();
+        }
+
+        public int determinePointTileId(Point pt){
+            Dimension tileDimension = boardPanel.boardTiles.getFirst().getSize();
+            int column = 1 + (int)((pt.getX() - TILE_DRAWING_X_POSITION_ADJUSTMENT) / tileDimension.getWidth());
+            int row = (int)((pt.getY() - TILE_DRAWING_Y_POSITION_ADJUSTMENT) / tileDimension.getHeight());
+            int tileId = (row-1)*8 + column - 1;
+
+            return tileId;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            if (draggedImage != null && location != null) {
+                g.drawImage(draggedImage, location.x - TILE_DRAWING_X_POSITION_ADJUSTMENT, location.y - TILE_DRAWING_Y_POSITION_ADJUSTMENT, this);
+            }
+        }
+    }
+
 
 }
