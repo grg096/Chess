@@ -232,7 +232,6 @@ public class Table {
     private class OptionsDialogWindow extends JDialog {
         // texturePack, players, map regime,
 
-        final private JFrame frame;
         final private JPanel texturePanel;
         final private JPanel playerPanel;
         final private JPanel optionsTakenPiecesPanel;
@@ -244,8 +243,6 @@ public class Table {
         private String tempTexturePack = texturePack;
 
         public OptionsDialogWindow(JFrame frame) {
-
-            this.frame = frame;
 
             final Container dialogWindowContainer = new Container();
             dialogWindowContainer.setLayout(new BoxLayout(dialogWindowContainer, BoxLayout.Y_AXIS));
@@ -503,14 +500,11 @@ public class Table {
 
         final List<TilePanel> boardTiles;
 
-        private Image draggedImage = null; // later will make it to adjust to each piece
-        private Point draggedImagePoint = null;
-
         BoardPanel() {
             super(new GridLayout(8, 8));
             this.boardTiles = new ArrayList<>();
             for (int i = 0; i < BoardUtils.NUM_TILES; i++) {
-                final TilePanel tilePanel = new TilePanel(this, i, 3);
+                final TilePanel tilePanel = new TilePanel(this, i);
                 this.boardTiles.add(tilePanel);
                 add(tilePanel);
             }
@@ -570,10 +564,9 @@ public class Table {
 
         private final int tileId;
 
-        private static int mouseTileId = -1;
 
         TilePanel(final BoardPanel boardPanel,
-                  final int tileId, final int WILL_DELETE_LATER){
+                  final int tileId){
 
             super(new GridBagLayout());
             this.tileId = tileId;
@@ -596,34 +589,13 @@ public class Table {
 
                         sourceTile = chessBoard.getTile(tileId);
                         humanMovedPiece = sourceTile.getPiece();
+
                         if (humanMovedPiece == null) {
                             sourceTile = null;
                         }
 
                     }
-                    // second click
-                    else {
-
-                        destinationTile = chessBoard.getTile(tileId);
-                        final Move move = Move.MoveFactory.createMove(chessBoard, sourceTile.getTileCoordinate(), destinationTile.getTileCoordinate());
-                        final MoveTransition transition = chessBoard.currentPlayer().makeMove(move);
-                        if (transition.getMoveStatus().isDone()) {
-                            chessBoard = transition.getTransitionBoard();
-                            System.out.println(chessBoard);
-                            movelog.addMove(move);
-                            //TODO add made move to move list
-                        }
-
-                        sourceTile = null;
-                        destinationTile = null;
-                        humanMovedPiece = null;
-
-                    }
-
-
-                    validate();
                 }
-
 
             }
 
@@ -638,7 +610,6 @@ public class Table {
                     Image image = TilePanel.this.getTileIconImage(chessBoard);
                     Point point = SwingUtilities.convertPoint(TilePanel.this, e.getPoint(), dragGlassPane);
                     dragGlassPane.startDrag(image, point);
-                    mouseTileId = tileId;
                 }
 
                 boardPanel.drawBoard(chessBoard);
@@ -705,133 +676,6 @@ public class Table {
 
             }
         };
-
-
-        TilePanel(final BoardPanel boardPanel,
-                  final int tileId) {
-
-            super(new GridBagLayout());
-            this.tileId = tileId;
-            setPreferredSize(TILE_PANEL_DIMENSION);
-            assignTileColor();
-            assignTilePieceIcon(chessBoard);
-
-
-
-            addMouseListener(new MouseListener() {
-
-                @Override
-                public void mouseClicked(MouseEvent e) {
-
-                    // dont really know how to do it well, probably will need to use multithreading
-                    // the problem is that I either need to check if it's an AI move first in the order and then work with user move
-                    // which lead to the problem that AI move executes only after additional clicking(let say that black is AI,
-                    // then program checks if current player(white) is AI, then lets user make a move and that's it, the mouseListener ends. Then you need to click again and that will trigger AI check,
-                    // which will be true in this case, because player now is black, and program will execute the move)
-                    // Second case is that you put AI check after the user's move code, but in this case the program itself will draw the board only after all moves, white and black, are done
-                    // which is obviously bad and I dont really understand why it happens. I suppose that program can work only on one task at a time, so when I make an AI move it completely
-                    //switches to calculating all AI possibilities and cant even validate and repaint the board(although code for that is before the AI, so I dont understand why it happens, almost like it ignores that code)
-                    if (chessBoard.isAI()) {
-                        executeAiMove();
-                    }
-
-                    if (isRightMouseButton(e)) {
-
-                        sourceTile = null;
-                        destinationTile = null;
-                        humanMovedPiece = null;
-
-                    } else if (isLeftMouseButton(e)) {
-
-                        // first click
-                        if (sourceTile == null) {
-
-                            sourceTile = chessBoard.getTile(tileId);
-                            humanMovedPiece = sourceTile.getPiece();
-                            if (humanMovedPiece == null) {
-                                sourceTile = null;
-                            }
-
-                        }
-                        // second click
-                        else {
-
-                            destinationTile = chessBoard.getTile(tileId);
-                            final Move move = Move.MoveFactory.createMove(chessBoard, sourceTile.getTileCoordinate(), destinationTile.getTileCoordinate());
-                            final MoveTransition transition = chessBoard.currentPlayer().makeMove(move);
-                            if (transition.getMoveStatus().isDone()) {
-                                chessBoard = transition.getTransitionBoard();
-                                System.out.println(chessBoard);
-                                movelog.addMove(move);
-                                //TODO add made move to move list
-                            }
-
-                            sourceTile = null;
-                            destinationTile = null;
-                            humanMovedPiece = null;
-
-                        }
-
-                        SwingUtilities.invokeLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                gameHistoryPanel.redo(chessBoard, movelog);
-                                takenPiecesPanel.redo(movelog);
-
-                                whiteTakenPieces.redo(movelog, chessBoard);
-                                blackTakenPieces.redo(movelog, chessBoard);
-
-                                boardPanel.drawBoard(chessBoard);
-                                validate();
-
-                                if(chessBoard.getPlayer().isInCheckMate()){ //later change on check for checkmate
-                                    new CheckMateDialogWindow();
-                                } else if (chessBoard.getPlayer().isInStaleMate()) {
-                                    new StaleMateDialogWindow();
-                                }
-
-                            }
-
-                        });
-
-                        validate();
-
-
-                    }
-                }
-
-
-                @Override
-                public void mousePressed(MouseEvent e) {
-
-                }
-
-                @Override
-                public void mouseReleased(MouseEvent e) {
-
-                }
-
-                @Override
-                public void mouseEntered(MouseEvent e) {
-
-                }
-
-                @Override
-                public void mouseExited(MouseEvent e) {
-
-                }
-            });
-
-            validate();
-        }
-
-        // may be it should work on a board panel level, now I basically add this tileIconImage to all the tiles, because drawBoard() draws each tile and drawTile() calls repaint always
-//        public void paintComponent(Graphics g){
-//            super.paintComponent(g);
-//            if(this.tileId == mouseTileId) {
-//                tileIconImage.paintIcon(boardPanel, g, (int) tileImageCornerPoint.getX(), (int) tileImageCornerPoint.getY());
-//            }
-//        }
 
         public void executeAiMove() {
             final Move move = miniMax.execute(chessBoard);
@@ -971,6 +815,10 @@ public class Table {
             int column = 1 + (int)((pt.getX() - TILE_DRAWING_X_POSITION_ADJUSTMENT) / tileDimension.getWidth());
             int row = (int)((pt.getY() - TILE_DRAWING_Y_POSITION_ADJUSTMENT) / tileDimension.getHeight());
             int tileId = (row-1)*8 + column - 1;
+
+            if(boardDirection == BoardDirection.FLIPPED){
+                tileId = 63 - tileId;
+            }
 
             return tileId;
         }
