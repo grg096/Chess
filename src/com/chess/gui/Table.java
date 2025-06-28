@@ -8,6 +8,7 @@ import com.chess.engine.pieces.Piece;
 import com.chess.engine.player.MoveStatus;
 import com.chess.engine.player.MoveTransition;
 import com.chess.engine.player.ai.MiniMax;
+import com.chess.pgn.FenUtilities;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
@@ -582,6 +583,7 @@ public class Table {
         MouseAdapter mouseHandler = new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+
 
                 if (SwingUtilities.isLeftMouseButton(e)) {
 

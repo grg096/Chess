@@ -75,14 +75,20 @@ public abstract class Player {
         return false;
     }
 
-    //TODO more
     public boolean isInCheckMate(){
         return this.isInCheck && !hasEscapeMoves();
     }
 
-    //TODO more
     public boolean isInStaleMate(){
         return !this.isInCheck && !hasEscapeMoves();
+    }
+
+    public boolean isKingSideCastleCapable(){
+        return this.playerKing.isKingSideCastleCapable();
+    }
+
+    public boolean isQueenSideCastleCapable(){
+        return this.playerKing.isQueenSideCastleCapable();
     }
 
     //TODO more
