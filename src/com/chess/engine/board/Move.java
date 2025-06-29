@@ -4,6 +4,7 @@ import com.chess.engine.board.Board.Builder;
 import com.chess.engine.pieces.Pawn;
 import com.chess.engine.pieces.Piece;
 import com.chess.engine.pieces.Rook;
+import com.chess.engine.player.MoveStatus;
 
 public abstract class Move {
 

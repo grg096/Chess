@@ -4,6 +4,7 @@ import com.chess.engine.Alliance;
 import com.chess.engine.board.Board;
 import com.chess.engine.board.BoardUtils;
 import com.chess.engine.board.Move;
+import com.chess.gui.Table;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -111,7 +112,9 @@ public class Pawn extends Piece {
 
     //TODO the logic of choosing promotion piece, for now just automatic queen promotion
     public Piece getPromotionPiece(){
-        return new Queen(this.pieceAlliance, this.piecePosition, false);
+
+        return new Table.PawnPromotionDialogWindow(this.pieceAlliance, this.piecePosition).getPromotionPiece();
+//        return new Rook(pieceAlliance, piecePosition, false);
     }
 
     @Override

@@ -23,6 +23,11 @@ public enum Alliance {
         }
 
         @Override
+        public String toString() {
+            return "W";
+        }
+
+        @Override
         public boolean isWhite() {
             return true;
         }
@@ -59,6 +64,11 @@ public enum Alliance {
         }
 
         @Override
+        public String toString() {
+            return "B";
+        }
+
+        @Override
         public boolean isWhite() {
             return false;
         }
@@ -82,6 +92,8 @@ public enum Alliance {
     public abstract int getDirection();
     public abstract int getOppositeDirection();
     public abstract Alliance getOpponentAlliance();
+
+    public abstract String toString();
 
     public abstract boolean isWhite();
     public abstract boolean isBlack();

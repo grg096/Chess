@@ -4,6 +4,11 @@ import com.chess.engine.Alliance;
 import com.chess.engine.board.Board;
 import com.chess.engine.board.Move;
 
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import java.awt.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 
 public abstract class Piece {
@@ -85,6 +90,16 @@ public abstract class Piece {
             public boolean isRook() {
                 return false;
             }
+
+            @Override
+            public ImageIcon getImage(String texturePack, Alliance pieceAlliance) {
+                String url = "src/com/chess/gui/art/" + texturePack + "/" + pieceAlliance + this.getPieceName() + ".gif";
+                try {
+                    return new ImageIcon(ImageIO.read(new File(url)));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         },
         KNIGHT("N", 300) {
             @Override
@@ -95,6 +110,16 @@ public abstract class Piece {
             @Override
             public boolean isRook() {
                 return false;
+            }
+
+            @Override
+            public ImageIcon getImage(String texturePack, Alliance pieceAlliance) {
+                String url = "src/com/chess/gui/art/" + texturePack + "/" + pieceAlliance + this.getPieceName() + ".gif";
+                try {
+                    return new ImageIcon(ImageIO.read(new File(url)));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
         },
         BISHOP("B", 300) {
@@ -107,6 +132,16 @@ public abstract class Piece {
             public boolean isRook() {
                 return false;
             }
+
+            @Override
+            public ImageIcon getImage(String texturePack, Alliance pieceAlliance) {
+                String url = "src/com/chess/gui/art/" + texturePack + "/" + pieceAlliance + this.getPieceName() + ".gif";
+                try {
+                    return new ImageIcon(ImageIO.read(new File(url)));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         },
         ROOK("R", 500) {
             @Override
@@ -117,6 +152,16 @@ public abstract class Piece {
             @Override
             public boolean isRook() {
                 return true;
+            }
+
+            @Override
+            public ImageIcon getImage(String texturePack, Alliance pieceAlliance) {
+                String url = "src/com/chess/gui/art/" + texturePack + "/" + pieceAlliance + this.getPieceName() + ".gif";
+                try {
+                    return new ImageIcon(ImageIO.read(new File(url)));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
         },
         QUEEN("Q", 900) {
@@ -129,6 +174,16 @@ public abstract class Piece {
             public boolean isRook() {
                 return false;
             }
+
+            @Override
+            public ImageIcon getImage(String texturePack, Alliance pieceAlliance) {
+                String url = "src/com/chess/gui/art/" + texturePack + "/" + pieceAlliance + this.getPieceName() + ".gif";
+                try {
+                    return new ImageIcon(ImageIO.read(new File(url)));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         },
         KING("K", 1000) {
             @Override
@@ -139,6 +194,16 @@ public abstract class Piece {
             @Override
             public boolean isRook() {
                 return false;
+            }
+
+            @Override
+            public ImageIcon getImage(String texturePack, Alliance pieceAlliance) {
+                String url = "src/com/chess/gui/art/" + texturePack + "/" + pieceAlliance + this.getPieceName() + ".gif";
+                try {
+                    return new ImageIcon(ImageIO.read(new File(url)));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
         };
 
@@ -159,8 +224,12 @@ public abstract class Piece {
         public int getPieceValue(){
             return this.pieceValue;
         }
+        public String getPieceName(){
+            return this.pieceName;
+        }
 
         public abstract boolean isKing();
         public abstract boolean isRook();
+        public abstract ImageIcon getImage(final String texturePack, final Alliance pieceAlliance);
     }
 }

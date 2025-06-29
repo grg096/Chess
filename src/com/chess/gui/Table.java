@@ -1,10 +1,11 @@
 package com.chess.gui;
 
+import com.chess.engine.Alliance;
 import com.chess.engine.board.Board;
 import com.chess.engine.board.BoardUtils;
 import com.chess.engine.board.Move;
 import com.chess.engine.board.Tile;
-import com.chess.engine.pieces.Piece;
+import com.chess.engine.pieces.*;
 import com.chess.engine.player.MoveStatus;
 import com.chess.engine.player.MoveTransition;
 import com.chess.engine.player.ai.MiniMax;
@@ -20,9 +21,7 @@ import java.awt.image.ImageObserver;
 import java.io.File;
 import java.io.IOException;
 import java.text.AttributedCharacterIterator;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.*;
 import java.util.List;
 
 import static javax.swing.SwingUtilities.*;
@@ -48,6 +47,7 @@ public class Table {
     private final static Dimension OUTER_FRAME_DIMENSION = new Dimension(800, 600);
     private final static Dimension BOARD_PANEL_DIMENSION = new Dimension(400, 350);
     private final static Dimension OPTIONS_DIALOG_DIMENSION = new Dimension(300, 500);
+    private final static Dimension PROMOTION_DIALOG_DIMENSION = new Dimension(700, 100);
     private final static Dimension TILE_PANEL_DIMENSION = new Dimension(10, 10);
     private final static Dimension END_GAME_DIALOG_WINDOW_DIMENSION = new Dimension(200, 100);
 
@@ -226,6 +226,69 @@ public class Table {
 
 
         return optionsMenuItem;
+
+    }
+
+    public static class PawnPromotionDialogWindow extends JDialog{
+
+        private final Alliance pieceAlliance;
+        private final int piecePosition;
+        private Piece promotionPiece;
+        private final String texturePack;
+        private final HashMap<Piece.PieceType, Piece> possiblePieces;
+
+        public PawnPromotionDialogWindow(final Alliance pieceAlliance, final int piecePosition){
+            this.pieceAlliance = pieceAlliance;
+            this.piecePosition = piecePosition;
+            this.possiblePieces = createMapOfPossiblePieces();
+            this.texturePack = Table.texturePack;
+
+            this.setModal(true);
+            this.setLayout(new FlowLayout());
+            this.setTitle("Choose promotion piece");
+            this.setSize(PROMOTION_DIALOG_DIMENSION);
+            this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+            this.add(createPiecePanel(Piece.PieceType.KNIGHT));
+
+            validate();
+            this.setVisible(true);
+
+        }
+
+
+        private JPanel createPiecePanel(final Piece.PieceType pieceType){
+
+            JPanel piecePanel = new JPanel();
+            ImageIcon image = pieceType.getImage(texturePack, pieceAlliance);
+            piecePanel.add(new JLabel(image));
+
+            piecePanel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    promotionPiece = possiblePieces.get(pieceType);
+                }
+            });
+
+            return piecePanel;
+        }
+
+        private HashMap<Piece.PieceType, Piece> createMapOfPossiblePieces() {
+
+            HashMap<Piece.PieceType, Piece> res = new HashMap<>();
+
+            res.put(Piece.PieceType.BISHOP, new Bishop(piecePosition, pieceAlliance));
+            res.put(Piece.PieceType.KNIGHT, new Knight(piecePosition, pieceAlliance));
+            res.put(Piece.PieceType.ROOK, new Rook(piecePosition, pieceAlliance));
+            res.put(Piece.PieceType.QUEEN, new Queen(piecePosition, pieceAlliance));
+
+            return res;
+
+        }
+
+        public Piece getPromotionPiece(){
+            return this.promotionPiece;
+        }
 
     }
 
