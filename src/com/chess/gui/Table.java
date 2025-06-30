@@ -28,6 +28,8 @@ import static javax.swing.SwingUtilities.*;
 
 public class Table {
 
+    private static Piece promotionPiece = new Bishop(30, Alliance.BLACK); //temporary check
+
     private final MiniMax miniMax;
     private final JFrame gameFrame;
     private final DragGlassPane dragGlassPane;
@@ -47,7 +49,7 @@ public class Table {
     private final static Dimension OUTER_FRAME_DIMENSION = new Dimension(800, 600);
     private final static Dimension BOARD_PANEL_DIMENSION = new Dimension(400, 350);
     private final static Dimension OPTIONS_DIALOG_DIMENSION = new Dimension(300, 500);
-    private final static Dimension PROMOTION_DIALOG_DIMENSION = new Dimension(700, 100);
+    private final static Dimension PROMOTION_DIALOG_DIMENSION = new Dimension(350, 100);
     private final static Dimension TILE_PANEL_DIMENSION = new Dimension(10, 10);
     private final static Dimension END_GAME_DIALOG_WINDOW_DIMENSION = new Dimension(200, 100);
 
@@ -105,6 +107,10 @@ public class Table {
         this.gameFrame.setSize(OUTER_FRAME_DIMENSION);
         this.gameFrame.setVisible(true);
 
+    }
+
+    public static Piece getPromotionPiece(){
+        return Table.promotionPiece;
     }
 
     private JMenuBar createTableMenuBar() {
@@ -249,6 +255,9 @@ public class Table {
             this.setSize(PROMOTION_DIALOG_DIMENSION);
             this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
+            this.add(createPiecePanel(Piece.PieceType.QUEEN));
+            this.add(createPiecePanel(Piece.PieceType.ROOK));
+            this.add(createPiecePanel(Piece.PieceType.BISHOP));
             this.add(createPiecePanel(Piece.PieceType.KNIGHT));
 
             validate();
@@ -267,6 +276,7 @@ public class Table {
                 @Override
                 public void mouseClicked(MouseEvent e) {
                     promotionPiece = possiblePieces.get(pieceType);
+                    dispose();
                 }
             });
 
@@ -277,16 +287,16 @@ public class Table {
 
             HashMap<Piece.PieceType, Piece> res = new HashMap<>();
 
-            res.put(Piece.PieceType.BISHOP, new Bishop(piecePosition, pieceAlliance));
-            res.put(Piece.PieceType.KNIGHT, new Knight(piecePosition, pieceAlliance));
-            res.put(Piece.PieceType.ROOK, new Rook(piecePosition, pieceAlliance));
-            res.put(Piece.PieceType.QUEEN, new Queen(piecePosition, pieceAlliance));
-
+            res.put(Piece.PieceType.BISHOP, new Bishop(pieceAlliance, piecePosition, false));
+            res.put(Piece.PieceType.KNIGHT, new Bishop(pieceAlliance, piecePosition, false));
+            res.put(Piece.PieceType.ROOK, new Bishop(pieceAlliance, piecePosition, false));
+            res.put(Piece.PieceType.QUEEN, new Bishop(pieceAlliance, piecePosition, false));
             return res;
 
         }
 
         public Piece getPromotionPiece(){
+            Table.promotionPiece = this.promotionPiece;
             return this.promotionPiece;
         }
 
@@ -642,7 +652,7 @@ public class Table {
 
         }
 
-        MouseAdapter mouseHandler = new MouseAdapter() {
+        private final MouseAdapter mouseHandler = new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
 
@@ -695,6 +705,12 @@ public class Table {
 
                 Point point = SwingUtilities.convertPoint(TilePanel.this, e.getPoint(), dragGlassPane);
                 destinationTile = chessBoard.getTile(dragGlassPane.determinePointTileId(point));
+
+                if(humanMovedPiece.getPieceType().equals(Piece.PieceType.PAWN) &&
+                        (destinationTile.getTileCoordinate() < 8 || (destinationTile.getTileCoordinate() > 55 && destinationTile.getTileCoordinate() < 64))){
+                    promotionPiece = new PawnPromotionDialogWindow(humanMovedPiece.getPieceAlliance(), destinationTile.getTileCoordinate()).getPromotionPiece();
+                }
+
                 final Move move = Move.MoveFactory.createMove(chessBoard, sourceTile.getTileCoordinate(), destinationTile.getTileCoordinate());
                 final MoveTransition transition = chessBoard.currentPlayer().makeMove(move);
                 if (transition.getMoveStatus().isDone()) {

@@ -3,6 +3,7 @@ package com.chess.engine.board;
 import com.chess.engine.player.*;
 import com.chess.engine.Alliance;
 import com.chess.engine.pieces.*;
+import com.chess.gui.Table;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;

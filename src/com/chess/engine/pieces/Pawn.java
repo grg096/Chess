@@ -112,9 +112,7 @@ public class Pawn extends Piece {
 
     //TODO the logic of choosing promotion piece, for now just automatic queen promotion
     public Piece getPromotionPiece(){
-
-        return new Table.PawnPromotionDialogWindow(this.pieceAlliance, this.piecePosition).getPromotionPiece();
-//        return new Rook(pieceAlliance, piecePosition, false);
+        return Table.getPromotionPiece();
     }
 
     @Override
