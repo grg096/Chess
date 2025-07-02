@@ -15,6 +15,8 @@ public class Pawn extends Piece {
 
     private final static int[] CANDIDATE_MOVE_COORDINATE = {16, 9, 8, 7};
 
+    private Piece promotionPiece = this;
+
     public Pawn(final int piecePosition, final Alliance pieceAlliance) {
         super(PieceType.PAWN, piecePosition, pieceAlliance, true);
     }
@@ -110,9 +112,12 @@ public class Pawn extends Piece {
         return ImmutableList.copyOf(legalMoves);
     }
 
-    //TODO the logic of choosing promotion piece, for now just automatic queen promotion
+    public void setPromotionPiece(Piece piece){
+        this.promotionPiece = piece;
+    }
+
     public Piece getPromotionPiece(){
-        return Table.getPromotionPiece();
+        return this.promotionPiece;
     }
 
     @Override

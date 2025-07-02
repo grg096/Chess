@@ -28,8 +28,6 @@ import static javax.swing.SwingUtilities.*;
 
 public class Table {
 
-    private static Piece promotionPiece = new Bishop(30, Alliance.BLACK); //temporary check
-
     private final MiniMax miniMax;
     private final JFrame gameFrame;
     private final DragGlassPane dragGlassPane;
@@ -107,10 +105,6 @@ public class Table {
         this.gameFrame.setSize(OUTER_FRAME_DIMENSION);
         this.gameFrame.setVisible(true);
 
-    }
-
-    public static Piece getPromotionPiece(){
-        return Table.promotionPiece;
     }
 
     private JMenuBar createTableMenuBar() {
@@ -235,7 +229,7 @@ public class Table {
 
     }
 
-    public static class PawnPromotionDialogWindow extends JDialog{
+    public static class PawnPromotionDialogWindow extends JDialog {
 
         private final Alliance pieceAlliance;
         private final int piecePosition;
@@ -243,7 +237,7 @@ public class Table {
         private final String texturePack;
         private final HashMap<Piece.PieceType, Piece> possiblePieces;
 
-        public PawnPromotionDialogWindow(final Alliance pieceAlliance, final int piecePosition){
+        public PawnPromotionDialogWindow(final Alliance pieceAlliance, final int piecePosition) {
             this.pieceAlliance = pieceAlliance;
             this.piecePosition = piecePosition;
             this.possiblePieces = createMapOfPossiblePieces();
@@ -266,7 +260,7 @@ public class Table {
         }
 
 
-        private JPanel createPiecePanel(final Piece.PieceType pieceType){
+        private JPanel createPiecePanel(final Piece.PieceType pieceType) {
 
             JPanel piecePanel = new JPanel();
             ImageIcon image = pieceType.getImage(texturePack, pieceAlliance);
@@ -287,16 +281,15 @@ public class Table {
 
             HashMap<Piece.PieceType, Piece> res = new HashMap<>();
 
-            res.put(Piece.PieceType.BISHOP, new Bishop(pieceAlliance, piecePosition, false));
-            res.put(Piece.PieceType.KNIGHT, new Bishop(pieceAlliance, piecePosition, false));
-            res.put(Piece.PieceType.ROOK, new Bishop(pieceAlliance, piecePosition, false));
-            res.put(Piece.PieceType.QUEEN, new Bishop(pieceAlliance, piecePosition, false));
+            res.put(Piece.PieceType.BISHOP, new Bishop(Alliance.BLACK, piecePosition, false));
+            res.put(Piece.PieceType.KNIGHT, new Knight(Alliance.BLACK, piecePosition, false));
+            res.put(Piece.PieceType.ROOK, new Rook(Alliance.BLACK, piecePosition, false));
+            res.put(Piece.PieceType.QUEEN, new Queen(Alliance.BLACK, piecePosition, false));
             return res;
 
         }
 
-        public Piece getPromotionPiece(){
-            Table.promotionPiece = this.promotionPiece;
+        public Piece getPromotionPiece() {
             return this.promotionPiece;
         }
 
@@ -464,7 +457,7 @@ public class Table {
             return playerPanel;
         }
 
-        private JPanel createTakenPiecesPanel(){
+        private JPanel createTakenPiecesPanel() {
             final JPanel takenPiecesPanel = new JPanel();
             final JPanel radioButtonsPanel = new JPanel();
 
@@ -503,7 +496,7 @@ public class Table {
 
     private class CheckMateDialogWindow extends JDialog {
 
-        public CheckMateDialogWindow(){
+        public CheckMateDialogWindow() {
             this.setTitle("Checkmate");
             this.setSize(END_GAME_DIALOG_WINDOW_DIMENSION);
             this.setModal(true);
@@ -537,7 +530,7 @@ public class Table {
 
     private class StaleMateDialogWindow extends JDialog {
 
-        public StaleMateDialogWindow(){
+        public StaleMateDialogWindow() {
             this.setTitle("Stalemate");
             this.setSize(END_GAME_DIALOG_WINDOW_DIMENSION);
             this.setModal(true);
@@ -577,7 +570,7 @@ public class Table {
             super(new GridLayout(8, 8));
             this.boardTiles = new ArrayList<>();
             for (int i = 0; i < BoardUtils.NUM_TILES; i++) {
-                final TilePanel tilePanel = new TilePanel(this, i);
+                final TilePanel tilePanel = new TilePanel(i);
                 this.boardTiles.add(tilePanel);
                 add(tilePanel);
             }
@@ -638,8 +631,7 @@ public class Table {
         private final int tileId;
 
 
-        TilePanel(final BoardPanel boardPanel,
-                  final int tileId){
+        TilePanel(final int tileId) {
 
             super(new GridBagLayout());
             this.tileId = tileId;
@@ -675,7 +667,7 @@ public class Table {
             @Override
             public void mousePressed(MouseEvent e) {
 
-                if(chessBoard.getTile(tileId).isTileOccupied()){
+                if (chessBoard.getTile(tileId).isTileOccupied()) {
 
                     sourceTile = chessBoard.getTile(tileId);
                     humanMovedPiece = sourceTile.getPiece();
@@ -706,18 +698,27 @@ public class Table {
                 Point point = SwingUtilities.convertPoint(TilePanel.this, e.getPoint(), dragGlassPane);
                 destinationTile = chessBoard.getTile(dragGlassPane.determinePointTileId(point));
 
-                if(humanMovedPiece.getPieceType().equals(Piece.PieceType.PAWN) &&
-                        (destinationTile.getTileCoordinate() < 8 || (destinationTile.getTileCoordinate() > 55 && destinationTile.getTileCoordinate() < 64))){
-                    promotionPiece = new PawnPromotionDialogWindow(humanMovedPiece.getPieceAlliance(), destinationTile.getTileCoordinate()).getPromotionPiece();
+                if (humanMovedPiece != null &&
+                        humanMovedPiece.getPieceType().equals(Piece.PieceType.PAWN) &&
+                        humanMovedPiece.getPieceAlliance().isPawnPromotionSquare(destinationTile.getTileCoordinate())) {
+
+                    final Move checkMove = Move.MoveFactory.createMove(chessBoard, sourceTile.getTileCoordinate(), destinationTile.getTileCoordinate());
+                    if(!(checkMove instanceof Move.NullMove)){
+                        Piece promotionPiece = new PawnPromotionDialogWindow(humanMovedPiece.getPieceAlliance(), destinationTile.getTileCoordinate()).getPromotionPiece();
+                        ((Pawn) humanMovedPiece).setPromotionPiece(promotionPiece);
+                    }
+
                 }
 
+
                 final Move move = Move.MoveFactory.createMove(chessBoard, sourceTile.getTileCoordinate(), destinationTile.getTileCoordinate());
+
+
                 final MoveTransition transition = chessBoard.currentPlayer().makeMove(move);
                 if (transition.getMoveStatus().isDone()) {
                     chessBoard = transition.getTransitionBoard();
                     System.out.println(chessBoard);
                     movelog.addMove(move);
-                    //TODO add made move to move list
                 }
 
                 sourceTile = null;
@@ -736,7 +737,7 @@ public class Table {
                         boardPanel.drawBoard(chessBoard);
                         validate();
 
-                        if(chessBoard.getPlayer().isInCheckMate()){
+                        if (chessBoard.getPlayer().isInCheckMate()) {
                             new CheckMateDialogWindow();
                         } else if (chessBoard.getPlayer().isInStaleMate()) {
                             new StaleMateDialogWindow();
@@ -803,7 +804,7 @@ public class Table {
             }
         }
 
-        private Image getTileIconImage(final Board board){
+        private Image getTileIconImage(final Board board) {
             try {
                 return ImageIO.read(new File(defaultPieceImagesPath + board.getTile(this.tileId).getPiece().getPieceAlliance().toString().substring(0, 1)
                         + board.getTile(this.tileId).getPiece().toString() + ".gif"));
@@ -832,7 +833,7 @@ public class Table {
                 final List<Move> pieceLegalMoves = new ArrayList<>();
 
                 for (final Move move : humanMovedPiece.calculateLegalMoves(board)) {
-                    if(board.currentPlayer().makeMove(move).getMoveStatus() == MoveStatus.DONE){
+                    if (board.currentPlayer().makeMove(move).getMoveStatus() == MoveStatus.DONE) {
                         pieceLegalMoves.add(move);
                     }
                 }
@@ -889,13 +890,13 @@ public class Table {
             repaint();
         }
 
-        public int determinePointTileId(Point pt){
+        public int determinePointTileId(Point pt) {
             Dimension tileDimension = boardPanel.boardTiles.getFirst().getSize();
-            int column = 1 + (int)((pt.getX() - TILE_DRAWING_X_POSITION_ADJUSTMENT) / tileDimension.getWidth());
-            int row = (int)((pt.getY() - TILE_DRAWING_Y_POSITION_ADJUSTMENT) / tileDimension.getHeight());
-            int tileId = (row-1)*8 + column - 1;
+            int column = 1 + (int) ((pt.getX() - TILE_DRAWING_X_POSITION_ADJUSTMENT) / tileDimension.getWidth());
+            int row = (int) ((pt.getY() - TILE_DRAWING_Y_POSITION_ADJUSTMENT) / tileDimension.getHeight());
+            int tileId = (row - 1) * 8 + column - 1;
 
-            if(boardDirection == BoardDirection.FLIPPED){
+            if (boardDirection == BoardDirection.FLIPPED) {
                 tileId = 63 - tileId;
             }
 

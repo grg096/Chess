@@ -4,7 +4,6 @@ import com.chess.engine.board.Board.Builder;
 import com.chess.engine.pieces.Pawn;
 import com.chess.engine.pieces.Piece;
 import com.chess.engine.pieces.Rook;
-import com.chess.engine.player.MoveStatus;
 
 public abstract class Move {
 
@@ -284,7 +283,6 @@ public abstract class Move {
 
         @Override
         public Board execute(){
-
             final Board pawnMovedBoard = this.decoratedMove.execute();
             final Builder builder = new Builder();
 
@@ -315,7 +313,7 @@ public abstract class Move {
 
         @Override
         public String toString() {
-            return "";
+            return decoratedMove.toString() + promotedPawn.getPromotionPiece().toString();
         }
     }
 
