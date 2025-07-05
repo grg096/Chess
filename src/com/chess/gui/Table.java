@@ -36,8 +36,8 @@ public class Table {
     private final TakenPiecesColorPanel.WhiteTakenPiecesColorPanel whiteTakenPieces;
     private final TakenPiecesColorPanel.BlackTakenPiecesColorPanel blackTakenPieces;
     private final BoardPanel boardPanel;
-    private final Movelog movelog;
 
+    private Movelog movelog;
     private Board chessBoard;
     private BoardDirection boardDirection;
     private Tile sourceTile;
@@ -99,6 +99,7 @@ public class Table {
         this.gameFrame.add(this.takenPiecesPanel, BorderLayout.WEST);
         this.gameFrame.add(this.whiteTakenPieces, positionOfWhiteTakenPanel);
         this.gameFrame.add(this.blackTakenPieces, positionOfBlackTakenPanel);
+
 
         this.gameFrame.setJMenuBar(tableMenuBar);
         this.gameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -594,18 +595,53 @@ public class Table {
 
     public static class Movelog {
 
+//        private final LinkedList<Move> moves;
         private final List<Move> moves;
+        private int currentMoveIndex;
+        private final List<Board> boards;
+        private int currentBoardIndex;
 
         Movelog() {
-            this.moves = new ArrayList<>();
+            this.moves = new LinkedList<>();
+            currentMoveIndex = -1;
+            this.boards = new LinkedList<>();
+            currentBoardIndex = -1;
         }
+
 
         public List<Move> getMoves() {
             return this.moves;
         }
 
-        public void addMove(final Move move) {
-            this.moves.add(move);
+        public List<Board> getBoards() {
+            return boards;
+        }
+
+        public int getCurrentMoveIndex() {
+            return currentMoveIndex;
+        }
+
+        public void setCurrentMoveIndex(int index) {
+            this.currentMoveIndex = index;
+        }
+
+        public int getCurrentBoardIndex() {
+            return currentBoardIndex;
+        }
+
+        public void setCurrentBoardIndex(int index) {
+            this.currentBoardIndex = index;
+        }
+
+        public void addMove(final Move move, final Board board) {
+//            this.moves.add(move);
+
+            if(currentMoveIndex == moves.size() - 1) {
+                this.moves.add(move);
+                currentMoveIndex++;
+                this.boards.add(board);
+                currentBoardIndex++;
+            }
         }
 
         public int size() {
@@ -616,12 +652,12 @@ public class Table {
             this.moves.clear();
         }
 
-        public Move removeMove(final int index) {
-            return this.moves.remove(index);
+        public void removeLastMove(){
+            moves.removeLast();
         }
 
-        public boolean removeMove(final Move move) {
-            return this.moves.remove(move);
+        public void removeMove(final Move move) {
+            this.moves.remove(move);
         }
 
     }
@@ -718,7 +754,7 @@ public class Table {
                 if (transition.getMoveStatus().isDone()) {
                     chessBoard = transition.getTransitionBoard();
                     System.out.println(chessBoard);
-                    movelog.addMove(move);
+                    movelog.addMove(move, chessBoard);
                 }
 
                 sourceTile = null;
@@ -763,7 +799,7 @@ public class Table {
             if (transition.getMoveStatus().isDone()) {
                 chessBoard = transition.getTransitionBoard();
                 System.out.println(chessBoard);
-                movelog.addMove(move);
+                movelog.addMove(move, chessBoard);
             }
 
             SwingUtilities.invokeLater(new Runnable() {
@@ -911,5 +947,24 @@ public class Table {
         }
     }
 
+    public void drawBoard(Board chessBoard){
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
 
+                boardPanel.drawBoard(chessBoard);
+//                validate();
+
+            }
+
+        });
+    }
+
+    public Movelog getMovelog() {
+        return movelog;
+    }
+
+    public void setMovelog(Movelog movelog){
+        this.movelog = movelog;
+    }
 }

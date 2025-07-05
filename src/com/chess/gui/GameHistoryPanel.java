@@ -1,5 +1,6 @@
 package com.chess.gui;
 
+import com.chess.JChess;
 import com.chess.engine.board.Board;
 import com.chess.engine.board.Move;
 
@@ -7,7 +8,11 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.xml.crypto.Data;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 public class GameHistoryPanel extends JPanel {
 
@@ -20,12 +25,47 @@ public class GameHistoryPanel extends JPanel {
         this.setLayout(new BorderLayout());
         this.model = new DataModel();
         final JTable table = new JTable(model);
+        final JPanel swapPanel = createMoveSwapPanel();
         table.setRowHeight(15);
         this.scrollPane = new JScrollPane(table);
         scrollPane.setColumnHeaderView(table.getTableHeader());
         scrollPane.setPreferredSize(HISTORY_PANEL_DIMENSION);
         this.add(scrollPane, BorderLayout.CENTER);
+        this.add(swapPanel, BorderLayout.SOUTH);
         this.setVisible(true);
+    }
+
+    private JPanel createMoveSwapPanel(){
+
+        final JPanel panel = new JPanel();
+        final JButton moveBackButton = new JButton();
+        final JButton moveForwardButton = new JButton();
+
+        moveBackButton.setText("<");
+        moveBackButton.setFocusable(false);
+        moveForwardButton.setText(">");
+        moveForwardButton.setFocusable(false);
+
+        moveBackButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("BUTTON BACK");
+//                Table.Movelog movelog = JChess.getTable().getMovelog();
+//                LinkedList<Move> moves = movelog.getMoves();
+//                LinkedList<Board> boards = movelog.getBoards();
+//
+//                boards.removeLast();
+//                Board rightBoard = boards.getLast();
+//
+//                JChess.getTable().drawBoard(rightBoard);
+
+            }
+        });
+
+        panel.add(moveBackButton);
+        panel.add(moveForwardButton);
+
+        return panel;
     }
 
     void redo(final Board board,
@@ -43,7 +83,7 @@ public class GameHistoryPanel extends JPanel {
         }
 
         if(moveHistory.getMoves().size() > 0){
-            final Move lastMove = moveHistory.getMoves().get(moveHistory.size() - 1);
+            final Move lastMove = moveHistory.getMoves().getLast();
             final String moveText = lastMove.toString();
 
             if(lastMove.getMovedPiece().getPieceAlliance().isWhite()){
