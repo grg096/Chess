@@ -17,14 +17,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.ImageObserver;
 import java.io.File;
 import java.io.IOException;
-import java.text.AttributedCharacterIterator;
 import java.util.*;
 import java.util.List;
-
-import static javax.swing.SwingUtilities.*;
 
 public class Table {
 
@@ -509,8 +505,8 @@ public class Table {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     chessBoard = Board.createStandardBoard();
-                    movelog.clear();
-                    gameHistoryPanel.redo(chessBoard, movelog);
+                    movelog.reset();
+                    gameHistoryPanel.redo(movelog);
                     takenPiecesPanel.redo(movelog);
                     blackTakenPieces.redo(movelog, chessBoard);
                     whiteTakenPieces.redo(movelog, chessBoard);
@@ -543,8 +539,8 @@ public class Table {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     chessBoard = Board.createStandardBoard();
-                    movelog.clear();
-                    gameHistoryPanel.redo(chessBoard, movelog);
+                    movelog.reset();
+                    gameHistoryPanel.redo(movelog);
                     takenPiecesPanel.redo(movelog);
                     blackTakenPieces.redo(movelog, chessBoard);
                     whiteTakenPieces.redo(movelog, chessBoard);
@@ -595,16 +591,15 @@ public class Table {
 
     public static class Movelog {
 
-//        private final LinkedList<Move> moves;
-        private final List<Move> moves;
+        private List<Move> moves;
         private int currentMoveIndex;
-        private final List<Board> boards;
+        private List<Board> boards;
         private int currentBoardIndex;
 
         Movelog() {
-            this.moves = new LinkedList<>();
+            this.moves = new ArrayList<>();
             currentMoveIndex = -1;
-            this.boards = new LinkedList<>();
+            this.boards = new ArrayList<>();
             currentBoardIndex = -1;
         }
 
@@ -617,47 +612,60 @@ public class Table {
             return boards;
         }
 
-        public int getCurrentMoveIndex() {
-            return currentMoveIndex;
+        public Movelog getMovelogByIndex(){
+            Movelog res = new Movelog();
+            for (int i = 0; i <= this.currentMoveIndex; i++) {
+                res.addMove(this.getMoves().get(i), this.getBoards().get(i));
+            }
+            return res;
         }
 
-        public void setCurrentMoveIndex(int index) {
-            this.currentMoveIndex = index;
+        public int getCurrentMoveIndex() {
+            return currentMoveIndex;
         }
 
         public int getCurrentBoardIndex() {
             return currentBoardIndex;
         }
 
-        public void setCurrentBoardIndex(int index) {
-            this.currentBoardIndex = index;
+        public void addMove(final Move move, final Board board) {
+
+            if(currentMoveIndex != moves.size() - 1) {
+                List<Move> updatedMoves = new ArrayList<>();
+                List<Board> updatedBoards = new ArrayList<>();
+                for (int i = 0; i <= currentMoveIndex; i++) {
+                    updatedMoves.add(moves.get(i));
+                    updatedBoards.add(boards.get(i));
+                }
+                this.moves = updatedMoves;
+                this.boards = updatedBoards;
+            }
+            moves.add(move);
+            currentMoveIndex++;
+            boards.add(board);
+            currentBoardIndex++;
         }
 
-        public void addMove(final Move move, final Board board) {
-//            this.moves.add(move);
-
-            if(currentMoveIndex == moves.size() - 1) {
-                this.moves.add(move);
-                currentMoveIndex++;
-                this.boards.add(board);
-                currentBoardIndex++;
+        public void decreaseIndex(){
+            if(currentMoveIndex > -1){
+                this.currentBoardIndex--;
+                this.currentMoveIndex--;
             }
         }
 
-        public int size() {
-            return this.moves.size();
+        public void increaseIndex(){
+            if(this.moves.size() > currentBoardIndex+1){
+                this.currentBoardIndex++;
+                this.currentMoveIndex++;
+            }
+
         }
 
-        public void clear() {
+        public void reset() {
             this.moves.clear();
-        }
-
-        public void removeLastMove(){
-            moves.removeLast();
-        }
-
-        public void removeMove(final Move move) {
-            this.moves.remove(move);
+            this.boards.clear();
+            this.currentMoveIndex = -1;
+            this.currentBoardIndex = -1;
         }
 
     }
@@ -764,7 +772,7 @@ public class Table {
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        gameHistoryPanel.redo(chessBoard, movelog);
+                        gameHistoryPanel.redo(movelog);
                         takenPiecesPanel.redo(movelog);
 
                         whiteTakenPieces.redo(movelog, chessBoard);
@@ -805,7 +813,7 @@ public class Table {
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run() {
-                    gameHistoryPanel.redo(chessBoard, movelog);
+                    gameHistoryPanel.redo(movelog);
                     takenPiecesPanel.redo(movelog);
 
                     whiteTakenPieces.redo(movelog, chessBoard);
@@ -951,10 +959,7 @@ public class Table {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-
                 boardPanel.drawBoard(chessBoard);
-//                validate();
-
             }
 
         });
@@ -964,7 +969,13 @@ public class Table {
         return movelog;
     }
 
-    public void setMovelog(Movelog movelog){
-        this.movelog = movelog;
+    public void setBoardAfterMovelogChange(){
+        if(movelog.currentBoardIndex > -1){
+            this.chessBoard = movelog.getBoards().get(movelog.currentBoardIndex);
+        } else{
+            this.chessBoard = Board.createStandardBoard();
+        }
+        drawBoard(chessBoard);
     }
+
 }

@@ -6,13 +6,10 @@ import com.chess.engine.board.Move;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.xml.crypto.Data;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
 
 public class GameHistoryPanel extends JPanel {
 
@@ -49,16 +46,31 @@ public class GameHistoryPanel extends JPanel {
         moveBackButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("BUTTON BACK");
-//                Table.Movelog movelog = JChess.getTable().getMovelog();
-//                LinkedList<Move> moves = movelog.getMoves();
-//                LinkedList<Board> boards = movelog.getBoards();
-//
-//                boards.removeLast();
-//                Board rightBoard = boards.getLast();
-//
-//                JChess.getTable().drawBoard(rightBoard);
+                final Table table = JChess.getTable();
+                if(!table.getMovelog().getBoards().isEmpty()){
+                    table.getMovelog().decreaseIndex();
+                    table.setBoardAfterMovelogChange();
+                    if(table.getMovelog().getCurrentBoardIndex() != -1){
+                        redo( table.getMovelog().getMovelogByIndex());
+                    } else{
+                        redo(new Table.Movelog());
+                    }
 
+                }
+            }
+        });
+
+        moveForwardButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final Table table = JChess.getTable();
+                table.getMovelog().increaseIndex();
+                table.setBoardAfterMovelogChange();
+                if(table.getMovelog().getCurrentBoardIndex() != -1){
+                    redo(table.getMovelog().getMovelogByIndex());
+                } else{
+                    redo(table.getMovelog().getMovelogByIndex());
+                }
             }
         });
 
@@ -68,28 +80,18 @@ public class GameHistoryPanel extends JPanel {
         return panel;
     }
 
-    void redo(final Board board,
-              final Table.Movelog moveHistory){
+    void redo(final Table.Movelog moveHistory){
         int currentRow = 0;
         this.model.clear();
         for(final Move move : moveHistory.getMoves()){
             final String moveText = move.toString();
             if(move.getMovedPiece().getPieceAlliance().isWhite()){
-                this.model.setValueAt(moveText, currentRow, 0);
+                this.model.setValueAt(moveText +
+                        calculateCheckAndCheckMateHash(moveHistory.getBoards().get(moveHistory.getMoves().indexOf(move))), currentRow, 0);
             } else if (move.getMovedPiece().getPieceAlliance().isBlack()) {
-                this.model.setValueAt(moveText, currentRow, 1);
+                this.model.setValueAt(moveText +
+                        calculateCheckAndCheckMateHash(moveHistory.getBoards().get(moveHistory.getMoves().indexOf(move))), currentRow, 1);
                 currentRow++;
-            }
-        }
-
-        if(moveHistory.getMoves().size() > 0){
-            final Move lastMove = moveHistory.getMoves().getLast();
-            final String moveText = lastMove.toString();
-
-            if(lastMove.getMovedPiece().getPieceAlliance().isWhite()){
-                this.model.setValueAt(moveText + calculateCheckAndCheckMateHash(board), currentRow , 0);
-            } else if(lastMove.getMovedPiece().getPieceAlliance().isBlack()){
-                this.model.setValueAt(moveText + calculateCheckAndCheckMateHash(board), currentRow-1, 1);
             }
         }
 
