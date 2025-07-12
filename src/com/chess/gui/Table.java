@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public class Table {
 
@@ -648,15 +649,26 @@ public class Table {
 
         public void decreaseIndex(){
             if(currentMoveIndex > -1){
-                this.currentBoardIndex--;
-                this.currentMoveIndex--;
+                if(boards.get(currentBoardIndex-1).isAI()){
+                    this.currentBoardIndex -= 2;
+                    this.currentMoveIndex -= 2;
+                } else {
+                    this.currentBoardIndex--;
+                    this.currentMoveIndex--;
+                }
+
             }
         }
 
         public void increaseIndex(){
             if(this.moves.size() > currentBoardIndex+1){
-                this.currentBoardIndex++;
-                this.currentMoveIndex++;
+                if(boards.get(currentBoardIndex-1).isAI()){
+                    this.currentBoardIndex += 2;
+                    this.currentMoveIndex += 2;
+                } else {
+                    this.currentBoardIndex++;
+                    this.currentMoveIndex++;
+                }
             }
 
         }
@@ -769,50 +781,7 @@ public class Table {
                 destinationTile = null;
                 humanMovedPiece = null;
 
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        gameHistoryPanel.redo(movelog);
-                        takenPiecesPanel.redo(movelog);
-
-                        whiteTakenPieces.redo(movelog, chessBoard);
-                        blackTakenPieces.redo(movelog, chessBoard);
-
-                        boardPanel.drawBoard(chessBoard);
-                        validate();
-
-                        if (chessBoard.getPlayer().isInCheckMate()) {
-                            new CheckMateDialogWindow();
-                        } else if (chessBoard.getPlayer().isInStaleMate()) {
-                            new StaleMateDialogWindow();
-                        }
-
-                    }
-
-                });
-
-                if (chessBoard.isAI()) {
-                    executeAiMove();
-
-                }
-
-                validate();
-
-            }
-        };
-
-        public void executeAiMove() {
-            final Move move = miniMax.execute(chessBoard);
-            final MoveTransition transition = chessBoard.currentPlayer().makeMove(move);
-            if (transition.getMoveStatus().isDone()) {
-                chessBoard = transition.getTransitionBoard();
-                System.out.println(chessBoard);
-                movelog.addMove(move, chessBoard);
-            }
-
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
+                SwingUtilities.invokeLater(() -> {
                     gameHistoryPanel.redo(movelog);
                     takenPiecesPanel.redo(movelog);
 
@@ -820,10 +789,140 @@ public class Table {
                     blackTakenPieces.redo(movelog, chessBoard);
 
                     boardPanel.drawBoard(chessBoard);
-                }
-            });
-            validate();
-        }
+                    validate();
+
+                    if (chessBoard.getPlayer().isInCheckMate()) {
+                        new CheckMateDialogWindow();
+                    } else if (chessBoard.getPlayer().isInStaleMate()) {
+                        new StaleMateDialogWindow();
+                    }
+
+                    if(chessBoard.isAI()){
+                        new SwingWorker<Move, Void>(){
+
+                            @Override
+                            protected Move doInBackground() throws Exception {
+                                return miniMax.execute(chessBoard);
+                            }
+
+                            @Override
+                            protected void done() {
+                                try {
+                                    final Move move = get();
+                                    final MoveTransition transition = chessBoard.currentPlayer().makeMove(move);
+                                    if (transition.getMoveStatus().isDone()) {
+                                        chessBoard = transition.getTransitionBoard();
+                                        System.out.println(chessBoard);
+                                        movelog.addMove(move, chessBoard);
+
+                                        gameHistoryPanel.redo(movelog);
+                                        takenPiecesPanel.redo(movelog);
+                                        whiteTakenPieces.redo(movelog, chessBoard);
+                                        blackTakenPieces.redo(movelog, chessBoard);
+                                        boardPanel.drawBoard(chessBoard);
+                                    }
+                                } catch (InterruptedException ex) {
+                                    throw new RuntimeException(ex);
+                                } catch (ExecutionException ex) {
+                                    throw new RuntimeException(ex);
+                                }
+
+                            }
+                        }.execute();
+                    }
+                });
+
+//                Thread thread1 = new Thread(() -> {
+//                    gameHistoryPanel.redo(movelog);
+//                    takenPiecesPanel.redo(movelog);
+//
+//                    whiteTakenPieces.redo(movelog, chessBoard);
+//                    blackTakenPieces.redo(movelog, chessBoard);
+//
+//                    boardPanel.drawBoard(chessBoard);
+//                    validate();
+//
+//                    if (chessBoard.getPlayer().isInCheckMate()) {
+//                        new CheckMateDialogWindow();
+//                    } else if (chessBoard.getPlayer().isInStaleMate()) {
+//                        new StaleMateDialogWindow();
+//                    }
+//                });
+//
+//                Thread thread2 = new Thread(() -> {
+//                    if (chessBoard.isAI()) {
+//                            executeAiMove();
+//
+//                        }
+//                });
+//                thread1.start();
+//                try {
+//                    thread1.join();
+//                } catch (InterruptedException ex) {
+//                    throw new RuntimeException(ex);
+//                }
+//                thread2.start();
+
+//                SwingUtilities.invokeLater(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        gameHistoryPanel.redo(movelog);
+//                        takenPiecesPanel.redo(movelog);
+//
+//                        whiteTakenPieces.redo(movelog, chessBoard);
+//                        blackTakenPieces.redo(movelog, chessBoard);
+//
+//                        boardPanel.drawBoard(chessBoard);
+//                        validate();
+//
+//                        if (chessBoard.getPlayer().isInCheckMate()) {
+//                            new CheckMateDialogWindow();
+//                        } else if (chessBoard.getPlayer().isInStaleMate()) {
+//                            new StaleMateDialogWindow();
+//                        }
+//
+//                        if (chessBoard.isAI()) {
+//                            executeAiMove();
+//
+//                        }
+//
+//                    }
+//
+//                });
+
+//                if (chessBoard.isAI()) {
+//                    executeAiMove();
+//
+//                }
+
+                validate();
+
+            }
+        };
+
+//        public void executeAiMove() {
+//            final Move move = miniMax.execute(chessBoard);
+//            final MoveTransition transition = chessBoard.currentPlayer().makeMove(move);
+//            if (transition.getMoveStatus().isDone()) {
+//                chessBoard = transition.getTransitionBoard();
+//                System.out.println(chessBoard);
+//                movelog.addMove(move, chessBoard);
+//            }
+//
+//            SwingUtilities.invokeLater(new Runnable() {
+//                @Override
+//                public void run() {
+//                    gameHistoryPanel.redo(movelog);
+//                    takenPiecesPanel.redo(movelog);
+//
+//                    whiteTakenPieces.redo(movelog, chessBoard);
+//                    blackTakenPieces.redo(movelog, chessBoard);
+//
+//                    boardPanel.drawBoard(chessBoard);
+//                }
+//            });
+//            validate();
+//        }
 
         public void drawTile(final Board board) {
             assignTileColor();
