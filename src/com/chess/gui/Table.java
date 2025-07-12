@@ -832,97 +832,10 @@ public class Table {
                     }
                 });
 
-//                Thread thread1 = new Thread(() -> {
-//                    gameHistoryPanel.redo(movelog);
-//                    takenPiecesPanel.redo(movelog);
-//
-//                    whiteTakenPieces.redo(movelog, chessBoard);
-//                    blackTakenPieces.redo(movelog, chessBoard);
-//
-//                    boardPanel.drawBoard(chessBoard);
-//                    validate();
-//
-//                    if (chessBoard.getPlayer().isInCheckMate()) {
-//                        new CheckMateDialogWindow();
-//                    } else if (chessBoard.getPlayer().isInStaleMate()) {
-//                        new StaleMateDialogWindow();
-//                    }
-//                });
-//
-//                Thread thread2 = new Thread(() -> {
-//                    if (chessBoard.isAI()) {
-//                            executeAiMove();
-//
-//                        }
-//                });
-//                thread1.start();
-//                try {
-//                    thread1.join();
-//                } catch (InterruptedException ex) {
-//                    throw new RuntimeException(ex);
-//                }
-//                thread2.start();
-
-//                SwingUtilities.invokeLater(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        gameHistoryPanel.redo(movelog);
-//                        takenPiecesPanel.redo(movelog);
-//
-//                        whiteTakenPieces.redo(movelog, chessBoard);
-//                        blackTakenPieces.redo(movelog, chessBoard);
-//
-//                        boardPanel.drawBoard(chessBoard);
-//                        validate();
-//
-//                        if (chessBoard.getPlayer().isInCheckMate()) {
-//                            new CheckMateDialogWindow();
-//                        } else if (chessBoard.getPlayer().isInStaleMate()) {
-//                            new StaleMateDialogWindow();
-//                        }
-//
-//                        if (chessBoard.isAI()) {
-//                            executeAiMove();
-//
-//                        }
-//
-//                    }
-//
-//                });
-
-//                if (chessBoard.isAI()) {
-//                    executeAiMove();
-//
-//                }
-
                 validate();
 
             }
         };
-
-//        public void executeAiMove() {
-//            final Move move = miniMax.execute(chessBoard);
-//            final MoveTransition transition = chessBoard.currentPlayer().makeMove(move);
-//            if (transition.getMoveStatus().isDone()) {
-//                chessBoard = transition.getTransitionBoard();
-//                System.out.println(chessBoard);
-//                movelog.addMove(move, chessBoard);
-//            }
-//
-//            SwingUtilities.invokeLater(new Runnable() {
-//                @Override
-//                public void run() {
-//                    gameHistoryPanel.redo(movelog);
-//                    takenPiecesPanel.redo(movelog);
-//
-//                    whiteTakenPieces.redo(movelog, chessBoard);
-//                    blackTakenPieces.redo(movelog, chessBoard);
-//
-//                    boardPanel.drawBoard(chessBoard);
-//                }
-//            });
-//            validate();
-//        }
 
         public void drawTile(final Board board) {
             assignTileColor();

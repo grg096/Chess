@@ -102,7 +102,6 @@ public abstract class TakenPiecesColorPanel extends JPanel {
         allyAdvantage = allyValue - opponentValue;
 
         if(allyAdvantage > 0){
-            System.out.println(allyAdvantage);
             advantage.setText(String.valueOf(allyAdvantage));
         } else {
             advantage.setText("");
