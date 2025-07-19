@@ -121,10 +121,25 @@ public class Table {
         openPGN.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+
+                String fen = null; //TODO getting string in FEN format from uploaded file
+                chessBoard = FenUtilities.createGameFromFen("r4bnr/p1p1pppp/8/8/1P6/4P3/P4PPP/2k1K2R b K - 0 17");
+                drawBoard(chessBoard);
                 System.out.println("open up that pgn");
             }
         });
         fileMenu.add(openPGN);
+
+        final JMenuItem downloadPGN = new JMenuItem("Download PGN File");
+        downloadPGN.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String st = FenUtilities.createFenFromGame(chessBoard); //TODO uploading file with special format to computer
+                System.out.println(st);
+                System.out.println("download this pgn");
+            }
+        });
+        fileMenu.add(downloadPGN);
 
         final JMenuItem exitMenuItem = new JMenuItem("Exit");
         exitMenuItem.addActionListener(new ActionListener() {
