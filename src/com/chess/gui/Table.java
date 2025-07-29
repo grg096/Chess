@@ -16,6 +16,8 @@ import com.google.common.collect.Lists;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -48,6 +50,7 @@ public class Table {
     private final static Dimension PROMOTION_DIALOG_DIMENSION = new Dimension(350, 100);
     private final static Dimension TILE_PANEL_DIMENSION = new Dimension(10, 10);
     private final static Dimension END_GAME_DIALOG_WINDOW_DIMENSION = new Dimension(200, 100);
+    private final static Dimension INSERT_FEN_DIALOG_DIMENSION = new Dimension(400, 125);
 
     private final static int TILE_DRAWING_X_POSITION_ADJUSTMENT = 20;
     private final static int TILE_DRAWING_Y_POSITION_ADJUSTMENT = 10;
@@ -60,6 +63,8 @@ public class Table {
     private static String HIGHLITE_ICON_PATH = "src/com/chess/gui/art/misc/green_dot.png";
     private static String texturePack = "fancy";
     private static String defaultPieceImagesPath = "src/com/chess/gui/art/" + texturePack + "/";
+
+    private static Board standardBoard = Board.createStandardBoard();
 
     private final static Color lightTileColor = Color.white;
     private final static Color darkTileColor = Color.darkGray;
@@ -117,26 +122,28 @@ public class Table {
     private JMenu createFileMenu() {
         final JMenu fileMenu = new JMenu("File");
 
-        final JMenuItem openPGN = new JMenuItem("Load PGN File");
+        final JMenuItem openPGN = new JMenuItem("Load FEN text");
         openPGN.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
 
-                String fen = null; //TODO getting string in FEN format from uploaded file
-                chessBoard = FenUtilities.createGameFromFen("r4bnr/p1p1pppp/8/8/1P6/4P3/P4PPP/2k1K2R b K - 0 17");
+                String fen = new InsertFENDialogWindow(chessBoard).getFEN();
+                chessBoard = FenUtilities.createGameFromFen(fen);
+                standardBoard = chessBoard;
+                movelog.reset();
                 drawBoard(chessBoard);
-                System.out.println("open up that pgn");
+                System.out.println("open up that fen");
             }
         });
         fileMenu.add(openPGN);
 
-        final JMenuItem downloadPGN = new JMenuItem("Download PGN File");
+        final JMenuItem downloadPGN = new JMenuItem("Copy FEN to clipboard");
         downloadPGN.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String st = FenUtilities.createFenFromGame(chessBoard); //TODO uploading file with special format to computer
-                System.out.println(st);
-                System.out.println("download this pgn");
+                String st = FenUtilities.createFenFromGame(chessBoard);
+                Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                clipboard.setContents(new StringSelection(st), null);
             }
         });
         fileMenu.add(downloadPGN);
@@ -240,6 +247,95 @@ public class Table {
 
 
         return optionsMenuItem;
+
+    }
+
+    public class InsertFENDialogWindow extends JDialog{
+
+        private String fen;
+        private JLabel text;
+
+        private final Dimension TEXT_FIELD_DIMENSION = new Dimension(300, 30);
+        private final Dimension SUBMIT_BUTTON_DIMENSION = new Dimension(125, 25);
+
+        public InsertFENDialogWindow(Board board){
+            fen = FenUtilities.createFenFromGame(board);
+
+            this.setLayout(new FlowLayout());
+            this.setModal(true);
+            this.setTitle("FEN");
+            this.setSize(INSERT_FEN_DIALOG_DIMENSION);
+            this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+            text = new JLabel("Insert FEN");
+            text.setOpaque(true);
+
+            JTextField textField = new JTextField();
+            textField.setPreferredSize(TEXT_FIELD_DIMENSION);
+
+            JButton submitButton = new JButton();
+            submitButton.setFocusable(true);
+            submitButton.setText("submit");
+            submitButton.setPreferredSize(SUBMIT_BUTTON_DIMENSION);
+            submitButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    if(checkFENFormat(textField.getText())){
+                        fen = textField.getText();
+                        dispose();
+                    } else {
+                        text.setText("Incorrect format. Try again");
+                        text.setForeground(Color.red);
+                        repaint();
+                    }
+                }
+            });
+
+            this.add(text);
+            this.add(textField);
+            this.add(submitButton);
+
+            this.setVisible(true);
+        }
+
+        public String getFEN(){
+            return this.fen;
+        }
+
+        private boolean checkFENFormat(String st){
+            st = st.replaceAll("8", "--------").
+                    replaceAll("7","-------").
+                    replaceAll("6", "------").
+                    replaceAll("5", "-----").
+                    replaceAll("4", "----").
+                    replaceAll("3", "---").
+                    replaceAll("2", "--").
+                    replaceAll("1", "-").
+                    replaceAll("0", "");
+
+
+            String possibleElements = "bBkKnNpPqQrR/-";
+
+            if(st.length() < 71) return false;
+            if(st.charAt(71) != ' ') return false;
+            if(st.charAt(72) != 'w' && st.charAt(72) != 'b') return false;
+
+            for (int i = 0; i < st.length(); i++) {
+                if(!(possibleElements+" w").contains(""+st.charAt(i))) return false;
+            }
+
+            for (int i = 0; i < 71; i++) {
+                if(!possibleElements.contains(""+st.charAt(i))) return false;
+                if(i != 0 && (i+1) % 9 == 0){
+                    if(st.charAt(i) != '/') return false;
+                }
+            }
+
+            if(st.substring(74, st.lastIndexOf("-")-1).length() == 4) return false;
+
+
+            return true;
+        }
 
     }
 
@@ -665,10 +761,15 @@ public class Table {
 
         public void decreaseIndex(){
             if(currentMoveIndex > -1){
-                if(boards.get(currentBoardIndex-1).isAI()){
-                    this.currentBoardIndex -= 2;
-                    this.currentMoveIndex -= 2;
-                } else {
+                try {
+                    if(boards.get(currentBoardIndex-1).isAI()){
+                        this.currentBoardIndex -= 2;
+                        this.currentMoveIndex -= 2;
+                    } else {
+                        this.currentBoardIndex--;
+                        this.currentMoveIndex--;
+                    }
+                } catch (IndexOutOfBoundsException exception){
                     this.currentBoardIndex--;
                     this.currentMoveIndex--;
                 }
@@ -678,10 +779,15 @@ public class Table {
 
         public void increaseIndex(){
             if(this.moves.size() > currentBoardIndex+1){
-                if(boards.get(currentBoardIndex-1).isAI()){
-                    this.currentBoardIndex += 2;
-                    this.currentMoveIndex += 2;
-                } else {
+                try {
+                    if(boards.get(currentBoardIndex-1).isAI()){
+                        this.currentBoardIndex += 2;
+                        this.currentMoveIndex += 2;
+                    } else {
+                        this.currentBoardIndex++;
+                        this.currentMoveIndex++;
+                    }
+                } catch (IndexOutOfBoundsException exception){
                     this.currentBoardIndex++;
                     this.currentMoveIndex++;
                 }
@@ -769,87 +875,90 @@ public class Table {
                 dragGlassPane.stopDrag();
 
                 Point point = SwingUtilities.convertPoint(TilePanel.this, e.getPoint(), dragGlassPane);
-                destinationTile = chessBoard.getTile(dragGlassPane.determinePointTileId(point));
 
-                if (humanMovedPiece != null &&
-                        humanMovedPiece.getPieceType().equals(Piece.PieceType.PAWN) &&
-                        humanMovedPiece.getPieceAlliance().isPawnPromotionSquare(destinationTile.getTileCoordinate())) {
+                try{
+                    destinationTile = chessBoard.getTile(dragGlassPane.determinePointTileId(point));
+                    if (humanMovedPiece != null &&
+                            humanMovedPiece.getPieceType().equals(Piece.PieceType.PAWN) &&
+                            humanMovedPiece.getPieceAlliance().isPawnPromotionSquare(destinationTile.getTileCoordinate())) {
 
-                    final Move checkMove = Move.MoveFactory.createMove(chessBoard, sourceTile.getTileCoordinate(), destinationTile.getTileCoordinate());
-                    if(!(checkMove instanceof Move.NullMove)){
-                        Piece promotionPiece = new PawnPromotionDialogWindow(humanMovedPiece.getPieceAlliance(), destinationTile.getTileCoordinate()).getPromotionPiece();
-                        ((Pawn) humanMovedPiece).setPromotionPiece(promotionPiece);
+                        final Move checkMove = Move.MoveFactory.createMove(chessBoard, sourceTile.getTileCoordinate(), destinationTile.getTileCoordinate());
+                        if(!(checkMove instanceof Move.NullMove)){
+                            Piece promotionPiece = new PawnPromotionDialogWindow(humanMovedPiece.getPieceAlliance(), destinationTile.getTileCoordinate()).getPromotionPiece();
+                            ((Pawn) humanMovedPiece).setPromotionPiece(promotionPiece);
+                        }
+
                     }
 
-                }
+                    final Move move = Move.MoveFactory.createMove(chessBoard, sourceTile.getTileCoordinate(), destinationTile.getTileCoordinate());
+                    final MoveTransition transition = chessBoard.currentPlayer().makeMove(move);
+                    if (transition.getMoveStatus().isDone()) {
+                        chessBoard = transition.getTransitionBoard();
+                        System.out.println(chessBoard);
+                        movelog.addMove(move, chessBoard);
 
+                        SwingUtilities.invokeLater(() -> {
+                            gameHistoryPanel.redo(movelog);
+                            takenPiecesPanel.redo(movelog);
 
-                final Move move = Move.MoveFactory.createMove(chessBoard, sourceTile.getTileCoordinate(), destinationTile.getTileCoordinate());
+                            whiteTakenPieces.redo(movelog, chessBoard);
+                            blackTakenPieces.redo(movelog, chessBoard);
 
+                            boardPanel.drawBoard(chessBoard);
+                            validate();
 
-                final MoveTransition transition = chessBoard.currentPlayer().makeMove(move);
-                if (transition.getMoveStatus().isDone()) {
-                    chessBoard = transition.getTransitionBoard();
-                    System.out.println(chessBoard);
-                    movelog.addMove(move, chessBoard);
-                }
-
-                sourceTile = null;
-                destinationTile = null;
-                humanMovedPiece = null;
-
-                SwingUtilities.invokeLater(() -> {
-                    gameHistoryPanel.redo(movelog);
-                    takenPiecesPanel.redo(movelog);
-
-                    whiteTakenPieces.redo(movelog, chessBoard);
-                    blackTakenPieces.redo(movelog, chessBoard);
-
-                    boardPanel.drawBoard(chessBoard);
-                    validate();
-
-                    if (chessBoard.getPlayer().isInCheckMate()) {
-                        new CheckMateDialogWindow();
-                    } else if (chessBoard.getPlayer().isInStaleMate()) {
-                        new StaleMateDialogWindow();
-                    }
-
-                    if(chessBoard.isAI()){
-                        new SwingWorker<Move, Void>(){
-
-                            @Override
-                            protected Move doInBackground() throws Exception {
-                                return miniMax.execute(chessBoard);
+                            if (chessBoard.getPlayer().isInCheckMate()) {
+                                new CheckMateDialogWindow();
+                            } else if (chessBoard.getPlayer().isInStaleMate()) {
+                                new StaleMateDialogWindow();
                             }
 
-                            @Override
-                            protected void done() {
-                                try {
-                                    final Move move = get();
-                                    final MoveTransition transition = chessBoard.currentPlayer().makeMove(move);
-                                    if (transition.getMoveStatus().isDone()) {
-                                        chessBoard = transition.getTransitionBoard();
-                                        System.out.println(chessBoard);
-                                        movelog.addMove(move, chessBoard);
+                            if(chessBoard.isAI()){
+                                new SwingWorker<Move, Void>(){
 
-                                        gameHistoryPanel.redo(movelog);
-                                        takenPiecesPanel.redo(movelog);
-                                        whiteTakenPieces.redo(movelog, chessBoard);
-                                        blackTakenPieces.redo(movelog, chessBoard);
-                                        boardPanel.drawBoard(chessBoard);
+                                    @Override
+                                    protected Move doInBackground() throws Exception {
+                                        return miniMax.execute(chessBoard);
                                     }
-                                } catch (InterruptedException ex) {
-                                    throw new RuntimeException(ex);
-                                } catch (ExecutionException ex) {
-                                    throw new RuntimeException(ex);
-                                }
 
+                                    @Override
+                                    protected void done() {
+                                        try {
+                                            final Move move = get();
+                                            final MoveTransition transition = chessBoard.currentPlayer().makeMove(move);
+                                            if (transition.getMoveStatus().isDone()) {
+                                                chessBoard = transition.getTransitionBoard();
+                                                System.out.println(chessBoard);
+                                                movelog.addMove(move, chessBoard);
+
+                                                gameHistoryPanel.redo(movelog);
+                                                takenPiecesPanel.redo(movelog);
+                                                whiteTakenPieces.redo(movelog, chessBoard);
+                                                blackTakenPieces.redo(movelog, chessBoard);
+                                                boardPanel.drawBoard(chessBoard);
+                                            }
+                                        } catch (InterruptedException ex) {
+                                            throw new RuntimeException(ex);
+                                        } catch (ExecutionException ex) {
+                                            throw new RuntimeException(ex);
+                                        }
+
+                                    }
+                                }.execute();
                             }
-                        }.execute();
-                    }
-                });
+                        });
 
-                validate();
+                    }
+
+                    sourceTile = null;
+                    destinationTile = null;
+                    humanMovedPiece = null;
+
+                    validate();
+                }catch (Exception _){
+
+                }
+
 
             }
         };
@@ -1002,7 +1111,7 @@ public class Table {
         if(movelog.currentBoardIndex > -1){
             this.chessBoard = movelog.getBoards().get(movelog.currentBoardIndex);
         } else{
-            this.chessBoard = Board.createStandardBoard();
+            this.chessBoard = standardBoard;
         }
         drawBoard(chessBoard);
     }
